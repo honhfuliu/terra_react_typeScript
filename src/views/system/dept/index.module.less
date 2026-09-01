@@ -1,0 +1,80 @@
+// 部门管理页面样式（支持亮色 / 暗色主题切换）
+// 颜色全部使用 theme.less 中定义的 CSS 变量，主题切换时自动跟随变化
+
+.layout {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+}
+
+// 顶部搜索 + 工具栏区域
+.header {
+  padding: 18px 20px 6px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--container-bg);
+}
+
+// 操作工具栏（新增 / 保存排序 / 展开-折叠）
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 12px;
+}
+
+// 工具栏按钮统一样式：软主色风格（带蓝调），颜色取自全局 theme.less 的按钮变量
+// 不使用 antd 的 type=primary，全部走样式 + 主题变量，亮/暗色自动切换
+.toolButton {
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+  color: var(--btn-color);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--primary-color);
+    color: var(--btn-hover-color);
+  }
+
+  // icon 跟随按钮文字颜色
+  svg {
+    fill: currentColor;
+  }
+}
+
+// 表格主体区域
+.body {
+  padding: 16px 20px 20px;
+  background: var(--container-bg);
+}
+
+// 操作列链接公共样式
+.actionGroup {
+  white-space: nowrap;
+}
+
+// 编辑 / 添加子部门：与菜单管理的按钮尺寸、间距保持一致
+.actionLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+
+  svg { fill: currentColor; }
+}
+
+.modalBody { margin-top: 24px; }
+
+@media (max-width: 575px) {
+  .layout {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .header { padding: 16px 14px 4px; }
+  .body { padding: 12px 0 16px; }
+  .toolbar { padding-bottom: 10px; }
+  .modalBody { margin-top: 18px; }
+}

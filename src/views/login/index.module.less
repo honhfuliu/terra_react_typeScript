@@ -1,0 +1,170 @@
+.loginPage {
+  margin: 0;
+  width: 100%;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: #001529;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+/* ===== 科技感背景 ===== */
+.techBg {
+  background: linear-gradient(135deg, #061a31 0%, #0b2c4c 48%, #eef4f8 150%);
+  position: relative;
+  overflow: hidden;
+}
+
+.techBg::before,
+.techBg::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+/* 网格线 */
+.techBg::before {
+  inset: 0;
+  opacity: .16;
+  background-image:
+          linear-gradient(rgba(255, 255, 255, .24) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, .24) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(135deg, #000 0%, transparent 70%);
+  -webkit-mask-image: linear-gradient(135deg, #000 0%, transparent 70%);
+}
+
+/* 装饰性菱形 */
+.techBg::after {
+  width: 620px;
+  height: 620px;
+  right: -190px;
+  top: -180px;
+  border: 1px solid rgba(123, 190, 255, .28);
+  transform: rotate(30deg);
+  box-shadow:
+          0 0 0 30px rgba(123, 190, 255, .04),
+          0 0 0 60px rgba(123, 190, 255, .035);
+  border-radius: 20px;
+}
+
+/* ===== Toast 提示 ===== */
+.toast {
+  position: fixed;
+  top: 30px;
+  left: 50%;
+  transform: translate(-50%, -12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.22s ease;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-size: 14px;
+  z-index: 999;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 480px) {
+  .techBg::after {
+    width: 300px;
+    height: 300px;
+    right: -100px;
+    top: -100px;
+  }
+}
+.loginCard{
+  background: #FFFFFF;
+  border-radius: 10px;
+  padding: 40px;
+  max-width: 450px;
+  width: 450px;
+  .loginCardHeader{
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    margin-bottom: 32px;
+    .loginLogo{
+      .logoImage{
+        width: 55px;
+        height: 55px;
+      }
+    }
+    .loginTitle{
+      .loginTitleMain{
+        font-weight: 600;
+        font-size: 21px;
+        line-height: 30px;
+        letter-spacing: 1px;
+      }
+      .loginTitleDesc{
+        font-size: 12px;
+        color: rgb(148 163 184);
+        letter-spacing: 2px;
+      }
+    }
+  }
+  .loginWelcome{
+    margin-bottom: 24px;
+    .loginWelcomeTitle{
+      font-size: 24px;
+      line-height: 32px;
+      font-weight: 600;
+    }
+    .loginWelcomeDesc{
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 20px;
+      color: rgb(100 116 139);
+
+    }
+  }
+  .loginForm{
+    .loginFormCode{
+      display: flex;
+      > div:nth-child(1) {
+        width: 65%;
+        margin-right: 5px;
+      }
+      > div:nth-child(2) {
+        display: flex;
+        flex: 1;
+        background: #141414;
+        border-radius: 5px;
+        color: #FFFFFF;
+        justify-content: center;
+        align-items: center;
+        font-size: 16px;
+        letter-spacing: 5px;
+
+      }
+    }
+    .loginFormCaptchaRefresh{
+      color: rgb(148 163 184);
+      font-size: 12px;
+      line-height: 16px;
+      margin-top: 8px;
+    }
+  }
+  .loginAction{
+    margin-top: 10px;
+  }
+  .loginFooter{
+    color: rgb(148 163 184);
+    font-size: 12px;
+    line-height: 16px;
+    text-align: center;
+    margin-top: 20px;
+  }
+}

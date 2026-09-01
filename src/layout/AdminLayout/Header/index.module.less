@@ -1,0 +1,42 @@
+.header {
+  height: 48px;
+  line-height:48px;
+  max-height: 48px;
+  flex-shrink:0;
+  background-color: var(--header-bg) !important;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 30px;
+  .layout{
+    display: flex;
+    align-items:center;
+    justify-content:space-between;
+    .left{
+      display:flex;
+      align-items:center;
+      flex:1;
+      gap: 16px;
+    }
+    .right{
+      display:flex;
+      align-items:center;
+      //gap:20px;
+      //flex:1;
+      //justify-content:flex-end;
+    }
+  }
+}
+.themeSwitch {
+  &:global(.ant-switch-checked) {
+    background: #5b5b5b !important;
+  }
+}
+
+@media (max-width: 575px) {
+  .header {
+    padding: 0 12px;
+
+    .right :global(.ant-space) {
+      gap: 14px !important;
+    }
+  }
+}
