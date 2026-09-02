@@ -1,5 +1,6 @@
 import * as React from 'react';
 import request from '@/utils/request.ts';
+import { Dayjs } from 'dayjs';
 
 export // 角色添加
 type RoleAddType = {
@@ -24,10 +25,12 @@ export const addRole = async (data: RoleAddType) => {
 export type RoleSearchType = {
   name?: string;
   status?: string;
-  createTime?: [string, string];
+  createTime?: [Dayjs, Dayjs];
   roleKey?: string;
   pageNum: number;
   pageSize: number;
+  startTime?: string;
+  endTime?: string;
 };
 export type RoleRow = {
   roleId: number;
@@ -65,6 +68,20 @@ export const getRoleById = async (id: number) => {
 export const deleteRoleByIds = async (roleIds: React.Key[]) => {
   try {
     return await request.post('/system/role/delete', roleIds);
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+export type RoleNode = {
+  roleName: string;
+  roleId: number;
+};
+// 角色选择
+export const roleOptions = async () => {
+  try {
+    return await request.get<RoleNode[]>('/system/role/options');
   } catch (e) {
     console.error(e);
     throw e;

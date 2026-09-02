@@ -1,0 +1,165 @@
+.layout {
+  overflow: hidden;
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+}
+
+// 左右布局容器
+.container {
+  display: flex;
+  min-height: 560px;
+}
+
+// 左侧：组织机构树面板
+.leftPanel {
+  width: 240px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--container-bg);
+  border-right: 1px solid var(--border-color);
+  transition: width 0.2s ease;
+}
+
+.leftPanelCollapsed {
+  width: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-right: 0;
+  transition: width 0.2s ease;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  .panelHeaderTitle{
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panelHeaderButton{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    .iconWrapper {
+      width: 20px;
+      height: 20px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-size: 16px;
+      line-height: 1;
+    }
+  }
+}
+
+.panelBody {
+  padding: 12px 8px;
+  overflow: auto;
+  white-space: nowrap;
+  max-height: calc(100vh - 320px);
+}
+
+// 中间：收起/展开按钮
+.toggleWrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 18px;
+  background: var(--bg-color);
+  border-right: 1px solid var(--border-color);
+  justify-content: center;
+}
+
+.toggleBtn {
+  color: var(--btn-color);
+  font-size: 10px;
+  padding: 0;
+  line-height: 1;
+
+  &:hover {
+    color: var(--primary-color) !important;
+  }
+}
+
+// 右侧：搜索 + 工具栏 + 表格
+.rightPanel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 18px 20px 6px;
+  background: var(--container-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.toolbar {
+  padding: 6px 0 12px;
+}
+
+.toolButton {
+  color: var(--btn-color);
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+
+  &:hover {
+    color: var(--btn-hover-color) !important;
+    background: var(--btn-hover-bg) !important;
+    border-color: var(--primary-color) !important;
+  }
+
+  svg {
+    fill: currentColor;
+  }
+}
+
+.body {
+  padding: 16px 20px 20px;
+  background: var(--container-bg);
+}
+
+.modalBody {
+  padding-top: 8px;
+}
+
+@media (max-width: 767px) {
+  .container {
+    min-height: auto;
+  }
+
+  // 移动端默认收起左侧树
+  .leftPanel {
+    width: 0;
+    border-right: 0;
+  }
+}
+
+@media (max-width: 575px) {
+  .layout {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .header {
+    padding: 16px 14px 4px;
+  }
+  .body {
+    padding: 12px 0 16px;
+  }
+  .toolbar {
+    padding-bottom: 10px;
+  }
+}

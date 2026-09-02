@@ -40,6 +40,7 @@ import {
   RoleAddType,
   roleList,
   RoleRow,
+  RoleSearchType,
 } from '@/service/role.ts';
 import { TableRowSelection } from 'antd/es/table/interface';
 
@@ -67,15 +68,6 @@ const Role: React.FC = () => {
     total: 0,
   });
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中key存储
-
-  type RoleSearchType = {
-    name?: string;
-    status?: string;
-    createTime?: [string, string];
-    roleKey?: string;
-    pageNum: number;
-    pageSize: number;
-  };
 
   const { RangePicker } = DatePicker;
 
@@ -175,6 +167,12 @@ const Role: React.FC = () => {
       pageNum,
       pageSize,
     };
+    if (searchParams.createTime && Array.isArray(searchParams.createTime)) {
+      params.startTime = searchParams.createTime[0].format('YYYY-MM-DD HH:mm:ss');
+      params.endTime = searchParams.createTime[1].format('YYYY-MM-DD HH:mm:ss');
+      delete params.createTime;
+    }
+    console.log(params);
     try {
       const data = await roleList(params);
       console.log(data);
@@ -364,8 +362,8 @@ const Role: React.FC = () => {
                 <Select
                   placeholder={'角色状态'}
                   options={[
-                    { value: 1, label: '启用' },
-                    { value: 0, label: '停用' },
+                    { value: '1', label: '启用' },
+                    { value: '0', label: '停用' },
                   ]}
                 />
               </Form.Item>
