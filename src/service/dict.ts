@@ -85,7 +85,7 @@ export const dictDataListInfo = async (dictId?: number) => {
 // 根据字典值ID查询字典值详情（编辑回显）
 export const getDictDataInfo = async (dictCode: number) => {
   try {
-    return await request.get<AddDictDataType>(`/system/dict/data/edit/${dictCode}`);
+    return await request.get<AddDictDataType>(`/system/dict/data/${dictCode}`);
   } catch (e) {
     console.error(e);
     throw e;
@@ -106,6 +106,28 @@ export const deleteDictData = async (dictCode: number) => {
 export const deleteDictType = async (dictId: number) => {
   try {
     return await request.post(`/system/dict/type/delete/${dictId}`);
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+export type DictDataOption = {
+  /** 字典标签（显示名称） */
+  dictLabel?: string;
+  /** 字典值 */
+  dictValue?: string;
+  /** 是否默认：Y是 N否 */
+  isDefault?: string;
+  /** 标签类型：success、warning、error、processing、default */
+  tagType?: string;
+  /** CSS样式类 */
+  cssClass?: string;
+};
+// 根据字典获取字典值
+export const getDictDataByType = (dictType: string) => {
+  try {
+    return request.get<DictDataOption[]>(`/system/dict/data/type/${dictType}`);
   } catch (e) {
     console.error(e);
     throw e;

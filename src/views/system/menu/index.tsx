@@ -16,7 +16,6 @@ import {
   Space,
   Table,
   TableColumnsType,
-  Tag,
   TreeSelect,
 } from 'antd';
 import Search from '@/assets/svgs/Search.svg?react';
@@ -40,8 +39,14 @@ import {
   updateBatchMenuSort,
 } from '@/service/menu.ts';
 import { removeEmptyChildren } from '@/utils/tree.ts';
+import { useDict } from '@/hooks/useDict.ts';
+import DictTag from '@/components/DictTag';
+import { FilterOutlined } from '@ant-design/icons';
 
 const Menu: React.FC = () => {
+  const statusOptions = useDict('sys_status'); // 状态
+  const menuTypeOptions = useDict('sys_menu_type'); // 菜单类型
+
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
   // 上级菜单数据存储
@@ -75,6 +80,13 @@ const Menu: React.FC = () => {
       item.menuId,
       ...(item.children ? getAllKeys(item.children) : []),
     ]);
+  };
+  // 统计树形列表中的菜单总数（含子菜单）
+  const countTreeNodes = (list: MenuTable[]): number => {
+    return list.reduce(
+      (total, item) => total + 1 + (item.children ? countTreeNodes(item.children) : 0),
+      0,
+    );
   };
   // 展开折叠控制
   const handleExpandToggle = () => {
@@ -123,30 +135,31 @@ const Menu: React.FC = () => {
       dataIndex: 'menuType',
       key: 'menuType',
       width: 100,
-      render: (type: string) => {
-        const typeMap: Record<string, { label: string; color: string }> = {
-          M: {
-            label: '目录',
-            color: 'blue',
-          },
-          C: {
-            label: '菜单',
-            color: 'green',
-          },
-          B: {
-            label: '按钮',
-            color: 'orange',
-          },
-        };
-
-        const config = typeMap[type];
-
-        if (!config) {
-          return type;
-        }
-
-        return <Tag color={config.color}>{config.label}</Tag>;
-      },
+      render: (status: string) => DictTag({ value: status, option: menuTypeOptions }),
+      // render: (type: string) => {
+      //   const typeMap: Record<string, { label: string; color: string }> = {
+      //     M: {
+      //       label: '目录',
+      //       color: 'blue',
+      //     },
+      //     C: {
+      //       label: '菜单',
+      //       color: 'green',
+      //     },
+      //     B: {
+      //       label: '按钮',
+      //       color: 'orange',
+      //     },
+      //   };
+      //
+      //   const config = typeMap[type];
+      //
+      //   if (!config) {
+      //     return type;
+      //   }
+      //
+      //   return <Tag color={config.color}>{config.label}</Tag>;
+      // },
     },
     {
       title: '排序',
@@ -183,9 +196,7 @@ const Menu: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: string) => (
-        <Tag color={status === '1' ? 'success' : 'error'}>{status === '1' ? '启用' : '停用'}</Tag>
-      ),
+      render: (status: string) => DictTag({ value: status, option: statusOptions }),
     },
     {
       title: '操作',
@@ -243,6 +254,14 @@ const Menu: React.FC = () => {
     try {
       const data = await menuOptions(true);
       setMenuTree(data);
+      menuForm.setFieldsValue({
+        menuType: 'M',
+        menuSort: 0,
+        status: '1',
+        visible: '1',
+        keepAlive: '1',
+        parentId: 0,
+      });
       setIsModalOpen(true);
     } catch {
       /* empty */
@@ -292,9 +311,9 @@ const Menu: React.FC = () => {
   const getMenuByIdInfo = async (id: number) => {
     try {
       const data = await getMenuById(id);
-      menuForm.setFieldsValue(data);
       setMenuType(data.menuType);
       await showModal();
+      menuForm.setFieldsValue(data);
     } catch (e) {
       console.error(e);
     }
@@ -320,84 +339,113 @@ const Menu: React.FC = () => {
       console.error(e);
     }
   };
+  const totalMenuCount = countTreeNodes(menuTreeList);
   return (
     <div className={styles.layout}>
-      <div className={styles.header}>
-        <Form form={searchForm}>
-          <Row gutter={[16, 12]}>
-            <Col xs={24} sm={12} lg={8} xl={6}>
-              <Form.Item<MenuSearchType> label={'菜单名称'} name="menuName">
-                <Input placeholder={'请输入菜单名称'} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12} lg={8} xl={6}>
-              <Form.Item<MenuSearchType> label={'状态'} name="status">
-                <Select
-                  placeholder={'菜单状态'}
-                  options={[
-                    { value: 1, label: '启用' },
-                    { value: 0, label: '停用' },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} lg={8} xl={6}>
-              <Space wrap>
-                <Button
-                  type="primary"
-                  icon={<Search width={16} height={16} />}
-                  onClick={handleSearch}
+      {/* 卡片一：筛选条件 */}
+      <div className={styles.searchCard}>
+        <div className={styles.searchCardHeader}>
+          <div className={styles.titleWrap}>
+            <span className={styles.titleIcon}>
+              <FilterOutlined />
+            </span>
+            <span className={styles.cardTitle}>筛选条件</span>
+            <span className={styles.cardSubtitle}>快速定位菜单信息</span>
+          </div>
+        </div>
+        <div className={styles.searchCardBody}>
+          <Form form={searchForm}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} lg={8} xl={7}>
+                <Form.Item<MenuSearchType>
+                  label={'菜单名称'}
+                  name="menuName"
+                  style={{ marginBottom: 0 }}
                 >
-                  搜索
-                </Button>
-                <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
-                  重置
-                </Button>
-              </Space>
-            </Col>
-          </Row>
-
-          <Row className={styles.toolbar}>
-            <Space wrap>
-              <Button
-                className={styles.toolButton}
-                icon={<Add width={16} height={16} />}
-                onClick={showModal}
-              >
-                新增
-              </Button>
-              <Button
-                className={styles.toolButton}
-                icon={<Save width={16} height={16} />}
-                onClick={handleBatchSaveSort}
-              >
-                保存排序
-              </Button>
-              <Button
-                className={styles.toolButton}
-                icon={<Expand width={16} height={16} />}
-                onClick={handleExpandToggle}
-              >
-                展开/折叠
-              </Button>
-            </Space>
-          </Row>
-        </Form>
+                  <Input placeholder={'请输入菜单名称'} allowClear />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} lg={8} xl={7}>
+                <Form.Item<MenuSearchType>
+                  label={'状态'}
+                  name="status"
+                  style={{ marginBottom: 0 }}
+                >
+                  <Select
+                    placeholder={'菜单状态'}
+                    allowClear
+                    options={statusOptions.map((item) => ({
+                      label: item.dictLabel,
+                      value: item.dictValue,
+                    }))}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} lg={8} xl={10}>
+                <div className={styles.searchActions}>
+                  <Button
+                    type="primary"
+                    icon={<Search width={16} height={16} />}
+                    onClick={handleSearch}
+                  >
+                    搜索
+                  </Button>
+                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                    重置
+                  </Button>
+                </div>
+              </Col>
+            </Row>
+          </Form>
+        </div>
       </div>
-      <div className={styles.body}>
-        <Table
-          columns={columns}
-          dataSource={menuTreeList}
-          rowKey="menuId"
-          pagination={false}
-          scroll={{ x: 1220 }}
-          expandable={{
-            expandedRowKeys,
-            onExpandedRowsChange: (keys) => {
-              setExpandedRowKeys([...keys]);
-            },
-          }}
-        />
+
+      {/* 卡片二：菜单列表 */}
+      <div className={styles.tableCard}>
+        <div className={styles.tableCardHeader}>
+          <div className={styles.titleBlock}>
+            <span className={styles.cardTitle}>菜单列表</span>
+            <span className={styles.cardSubtitle}>共 {totalMenuCount} 个菜单</span>
+          </div>
+          <Space wrap>
+            <Button
+              className={styles.toolButton}
+              icon={<Add width={16} height={16} />}
+              onClick={showModal}
+            >
+              新增
+            </Button>
+            <Button
+              className={styles.toolButton}
+              icon={<Save width={16} height={16} />}
+              onClick={handleBatchSaveSort}
+            >
+              保存排序
+            </Button>
+            <Button
+              className={styles.toolButton}
+              icon={<Expand width={16} height={16} />}
+              onClick={handleExpandToggle}
+            >
+              展开/折叠
+            </Button>
+          </Space>
+        </div>
+        <div className={styles.tableCardBody}>
+          <Table
+            columns={columns}
+            dataSource={menuTreeList}
+            rowKey="menuId"
+            pagination={false}
+            scroll={{ x: 1220 }}
+            expandable={{
+              expandedRowKeys,
+              onExpandedRowsChange: (keys) => {
+                setExpandedRowKeys([...keys]);
+              },
+            }}
+          />
+        </div>
       </div>
 
       <div>
@@ -418,17 +466,7 @@ const Menu: React.FC = () => {
             ]}
           >
             <div className={styles.modalBody}>
-              <Form
-                form={menuForm}
-                initialValues={{
-                  menuType: 'M',
-                  sortOrder: 0,
-                  status: 1,
-                  visible: 1,
-                  keepAlive: 1,
-                  parentId: 0,
-                }}
-              >
+              <Form form={menuForm}>
                 <Row gutter={[16, 16]}>
                   <Col span={24}>
                     <Form.Item name="menuId" hidden>
@@ -464,11 +502,10 @@ const Menu: React.FC = () => {
                         onChange={(e) => {
                           setMenuType(e.target.value);
                         }}
-                        options={[
-                          { value: 'M', label: '目录' },
-                          { value: 'C', label: '菜单' },
-                          { value: 'F', label: '按钮' },
-                        ]}
+                        options={menuTypeOptions.map((item) => ({
+                          label: item.dictLabel,
+                          value: item.dictValue,
+                        }))}
                       />
                     </Form.Item>
                   </Col>
@@ -637,10 +674,10 @@ const Menu: React.FC = () => {
                       }}
                     >
                       <Radio.Group
-                        options={[
-                          { value: '1', label: '正常' },
-                          { value: '0', label: '停用' },
-                        ]}
+                        options={statusOptions.map((item) => ({
+                          label: item.dictLabel,
+                          value: item.dictValue,
+                        }))}
                       />
                     </Form.Item>
                   </Col>

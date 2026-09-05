@@ -19,7 +19,6 @@ import {
   Space,
   Table,
   TableColumnsType,
-  Tag,
   Tree,
   TreeDataNode,
   TreeProps,
@@ -43,8 +42,12 @@ import {
   RoleSearchType,
 } from '@/service/role.ts';
 import { TableRowSelection } from 'antd/es/table/interface';
+import { useDict } from '@/hooks/useDict.ts';
+import DictTag from '@/components/DictTag';
+import { FilterOutlined } from '@ant-design/icons';
 
 const Role: React.FC = () => {
+  const statusOptions = useDict('sys_status'); // 状态
   const { message } = App.useApp();
   // 菜单数据存储
   const [menuTree, setMenuTree] = useState<TreeDataNode[]>([]);
@@ -96,10 +99,7 @@ const Role: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => {
-        const text = status === '1' ? '启用' : '停用';
-        return <Tag color={status === '1' ? 'success' : 'error'}>{text}</Tag>;
-      },
+      render: (status: string) => DictTag({ value: status, option: statusOptions }),
     },
     {
       title: '创建时间',
@@ -340,111 +340,134 @@ const Role: React.FC = () => {
   };
   return (
     <div className={styles.layout}>
-      <div className={styles.header}>
-        <Form form={searchForm}>
-          <Row gutter={[16, 12]}>
-            <Col xs={24} sm={12} lg={8} xl={6}>
-              <Form.Item<RoleSearchType> label={'角色名称'} name="name" style={{ marginBottom: 0 }}>
-                <Input placeholder={'请输入角色名称'} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12} lg={8} xl={6}>
-              <Form.Item<RoleSearchType>
-                label={'权限字符'}
-                name="roleKey"
-                style={{ marginBottom: 0 }}
-              >
-                <Input placeholder={'请输入权限字符'} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12} lg={8} xl={4}>
-              <Form.Item<RoleSearchType> label={'状态'} name="status" style={{ marginBottom: 0 }}>
-                <Select
-                  placeholder={'角色状态'}
-                  options={[
-                    { value: '1', label: '启用' },
-                    { value: '0', label: '停用' },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12} lg={12} xl={8}>
-              <Form.Item<RoleSearchType>
-                label={'创建时间'}
-                name="createTime"
-                style={{ marginBottom: 0 }}
-              >
-                <RangePicker showTime />
-              </Form.Item>
-            </Col>
-            <Col xs={24} lg={8}>
-              <Space wrap>
-                <Button
-                  type="primary"
-                  icon={<Search width={16} height={16} />}
-                  onClick={handleSearch}
+      {/* 卡片一：筛选条件 */}
+      <div className={styles.searchCard}>
+        <div className={styles.searchCardHeader}>
+          <div className={styles.titleWrap}>
+            <span className={styles.titleIcon}>
+              <FilterOutlined />
+            </span>
+            <span className={styles.cardTitle}>筛选条件</span>
+            <span className={styles.cardSubtitle}>快速定位角色信息</span>
+          </div>
+        </div>
+        <div className={styles.searchCardBody}>
+          <Form form={searchForm}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} lg={8} xl={5}>
+                <Form.Item<RoleSearchType>
+                  label={'角色名称'}
+                  name="name"
+                  style={{ marginBottom: 0 }}
                 >
-                  搜索
-                </Button>
-                <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
-                  重置
-                </Button>
-              </Space>
-            </Col>
-          </Row>
-
-          <Row className={styles.toolbar}>
-            <Space wrap>
-              <Button
-                className={styles.toolButton}
-                onClick={showModal}
-                icon={<Add width={16} height={16} />}
-                size={'small'}
-              >
-                新增
-              </Button>
-              {/*<Button className={styles.toolButton} icon={<Update width={16} height={16} />}>*/}
-              {/*  修改*/}
-              {/*</Button>*/}
-              <Popconfirm
-                title="确认删除"
-                description={`确定要删除吗？`}
-                onConfirm={handleDeleteBatch}
-                okText="确定"
-                cancelText="取消"
-              >
-                <Button className={styles.toolButton} icon={<Delete width={16} height={16} />}>
-                  删除
-                </Button>
-              </Popconfirm>
-
-              <Button className={styles.toolButton} icon={<Download width={16} height={16} />}>
-                导出
-              </Button>
-            </Space>
-          </Row>
-        </Form>
+                  <Input placeholder={'请输入角色名称'} allowClear />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} lg={8} xl={5}>
+                <Form.Item<RoleSearchType>
+                  label={'权限字符'}
+                  name="roleKey"
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input placeholder={'请输入权限字符'} allowClear />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} lg={8} xl={4}>
+                <Form.Item<RoleSearchType>
+                  label={'状态'}
+                  name="status"
+                  style={{ marginBottom: 0 }}
+                >
+                  <Select
+                    placeholder={'角色状态'}
+                    allowClear
+                    options={statusOptions.map((item) => ({
+                      label: item.dictLabel,
+                      value: item.dictValue,
+                    }))}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} lg={8} xl={5}>
+                <Form.Item<RoleSearchType>
+                  label={'创建时间'}
+                  name="createTime"
+                  style={{ marginBottom: 0 }}
+                >
+                  <RangePicker showTime style={{ width: '100%' }} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} lg={8} xl={5}>
+                <div className={styles.searchActions}>
+                  <Button
+                    type="primary"
+                    icon={<Search width={16} height={16} />}
+                    onClick={handleSearch}
+                  >
+                    搜索
+                  </Button>
+                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                    重置
+                  </Button>
+                </div>
+              </Col>
+            </Row>
+          </Form>
+        </div>
       </div>
-      <div className={styles.body}>
-        <Table
-          rowSelection={{ type: 'checkbox', ...rowSelection }}
-          columns={columns}
-          rowKey={'roleId'}
-          dataSource={roleData}
-          scroll={{
-            x: 900,
-          }}
-          pagination={{
-            current: pagination.current, // 当前页码
-            pageSize: pagination.pageSize, // 每页条数
-            total: pagination.total, // 总条数
-            showSizeChanger: true, // 显示每页条数切换器
-            showQuickJumper: true, // 显示快速跳转
-            pageSizeOptions: ['10', '20', '50', '100'], // 每页条数选项
-            showTotal: (total) => `共 ${total} 条`, // 显示总数
-            onChange: (page, pageSize) => onChange(page, pageSize),
-          }}
-        />
+
+      {/* 卡片二：角色列表 */}
+      <div className={styles.tableCard}>
+        <div className={styles.tableCardHeader}>
+          <div className={styles.titleBlock}>
+            <span className={styles.cardTitle}>角色列表</span>
+            <span className={styles.cardSubtitle}>共 {pagination.total} 个角色</span>
+          </div>
+          <Space wrap>
+            <Button
+              className={styles.toolButton}
+              onClick={showModal}
+              icon={<Add width={16} height={16} />}
+            >
+              新增
+            </Button>
+            <Popconfirm
+              title="确认删除"
+              description={`确定要删除吗？`}
+              onConfirm={handleDeleteBatch}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button className={styles.toolButton} icon={<Delete width={16} height={16} />}>
+                删除
+              </Button>
+            </Popconfirm>
+            <Button className={styles.toolButton} icon={<Download width={16} height={16} />}>
+              导出
+            </Button>
+          </Space>
+        </div>
+        <div className={styles.tableCardBody}>
+          <Table
+            rowSelection={{ type: 'checkbox', ...rowSelection }}
+            columns={columns}
+            rowKey={'roleId'}
+            dataSource={roleData}
+            scroll={{
+              x: 900,
+            }}
+            pagination={{
+              current: pagination.current, // 当前页码
+              pageSize: pagination.pageSize, // 每页条数
+              total: pagination.total, // 总条数
+              showSizeChanger: true, // 显示每页条数切换器
+              showQuickJumper: true, // 显示快速跳转
+              pageSizeOptions: ['10', '20', '50', '100'], // 每页条数选项
+              showTotal: (total) => `共 ${total} 条`, // 显示总数
+              onChange: (page, pageSize) => onChange(page, pageSize),
+            }}
+          />
+        </div>
       </div>
 
       <div>
@@ -499,10 +522,10 @@ const Role: React.FC = () => {
                 <Col xs={24} md={12}>
                   <Form.Item<RoleAddType> label="状态" name="status">
                     <Radio.Group
-                      options={[
-                        { value: '1', label: '启用' },
-                        { value: '0', label: '停用' },
-                      ]}
+                      options={statusOptions.map((item) => ({
+                        label: item.dictLabel,
+                        value: item.dictValue,
+                      }))}
                     />
                   </Form.Item>
                 </Col>

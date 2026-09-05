@@ -42,8 +42,11 @@ import {
 import * as React from 'react';
 import { FilterOutlined } from '@ant-design/icons';
 import { removeEmptyChildren } from '@/utils/tree.ts';
+import { useDict } from '@/hooks/useDict.ts';
+import DictTag from '@/components/DictTag';
 
 const Dept: React.FC = () => {
+  const statusOptions = useDict('sys_status'); // 状态
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
   const [deptTree, setDeptTree] = useState<DeptNode[]>([]);
@@ -159,9 +162,7 @@ const Dept: React.FC = () => {
       key: 'status',
       width: 110,
       align: 'center',
-      render: (status: string) => (
-        <Tag color={status === '1' ? 'success' : 'error'}>{status === '1' ? '启用' : '停用'}</Tag>
-      ),
+      render: (status: string) => DictTag({ value: status, option: statusOptions }),
     },
     {
       title: '创建时间',
@@ -336,10 +337,10 @@ const Dept: React.FC = () => {
                   <Select
                     placeholder={'部门状态'}
                     allowClear
-                    options={[
-                      { value: 1, label: '启用' },
-                      { value: 0, label: '停用' },
-                    ]}
+                    options={statusOptions.map((item) => ({
+                      label: item.dictLabel,
+                      value: item.dictValue,
+                    }))}
                   />
                 </Form.Item>
               </Col>
@@ -499,10 +500,10 @@ const Dept: React.FC = () => {
                 <Col xs={24} md={12}>
                   <Form.Item<DeptAddType> label="状态" name="status">
                     <Radio.Group
-                      options={[
-                        { value: '1', label: '正常' },
-                        { value: '0', label: '停用' },
-                      ]}
+                      options={statusOptions.map((item) => ({
+                        label: item.dictLabel,
+                        value: item.dictValue,
+                      }))}
                     />
                   </Form.Item>
                 </Col>

@@ -18,7 +18,6 @@ import {
   Space,
   Table,
   TableColumnsType,
-  Tag,
   Tree,
   TreeDataNode,
   TreeProps,
@@ -38,7 +37,7 @@ import Right from '@/assets/svgs/Right.svg?react';
 
 import { TableRowSelection } from 'antd/es/table/interface';
 import { DeptNode, deptOptions } from '@/service/dept.ts';
-import { CaretDownOutlined, CaretUpOutlined } from '@ant-design/icons';
+import { CaretDownOutlined, CaretUpOutlined, FilterOutlined } from '@ant-design/icons';
 import {
   addUser,
   deleteUserByIds,
@@ -51,8 +50,12 @@ import {
   UserSearchType,
 } from '@/service/user.ts';
 import { RoleNode, roleOptions } from '@/service/role.ts';
+import { useDict } from '@/hooks/useDict.ts';
+import DictTag from '@/components/DictTag';
 
 const User: React.FC = () => {
+  const sexOptions = useDict('sys_sex'); // 性别状态
+  const statusOptions = useDict('sys_status'); // 状态
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
   const [deptTree, setDeptTree] = useState<TreeDataNode[]>([]); // 部门树结构
@@ -237,9 +240,7 @@ const User: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 90,
-      render: (status: string) => (
-        <Tag color={status === '1' ? 'success' : 'error'}>{status === '1' ? '正常' : '停用'}</Tag>
-      ),
+      render: (status: string) => DictTag({ value: status, option: statusOptions }),
     },
     { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 170 },
     {
@@ -459,76 +460,95 @@ const User: React.FC = () => {
 
         {/* 右侧：搜索 + 工具栏 + 表格 */}
         <div className={styles.rightPanel}>
-          <div className={styles.header}>
-            <Form form={searchForm}>
-              <Row gutter={[16, 12]}>
-                <Col xs={24} sm={12} lg={8} xl={6}>
-                  <Form.Item name="userId" hidden>
-                    <Input />
-                  </Form.Item>
-                  <Form.Item<UserSearchType>
-                    label={'用户名称'}
-                    name="username"
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Input placeholder={'请输入用户名称'} allowClear />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12} lg={8} xl={6}>
-                  <Form.Item<UserSearchType>
-                    label={'手机号码'}
-                    name="phone"
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Input placeholder={'请输入手机号码'} allowClear />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12} lg={8} xl={4}>
-                  <Form.Item<UserSearchType>
-                    label={'状态'}
-                    name="status"
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Select
-                      placeholder={'用户状态'}
-                      allowClear
-                      options={[
-                        { value: '1', label: '正常' },
-                        { value: '0', label: '停用' },
-                      ]}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} sm={12} lg={12} xl={8}>
-                  <Form.Item<UserSearchType>
-                    label={'创建时间'}
-                    name="createTime"
-                    style={{ marginBottom: 0 }}
-                  >
-                    <RangePicker showTime style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} lg={8}>
-                  <Space wrap>
-                    <Button
-                      type="primary"
-                      icon={<Search width={16} height={16} />}
-                      onClick={() => handleSearch()}
+          {/* 卡片一：筛选条件 */}
+          <div className={styles.searchCard}>
+            <div className={styles.searchCardHeader}>
+              <div className={styles.titleWrap}>
+                <span className={styles.titleIcon}>
+                  <FilterOutlined />
+                </span>
+                <span className={styles.cardTitle}>筛选条件</span>
+                <span className={styles.cardSubtitle}>快速定位用户信息</span>
+              </div>
+            </div>
+            <div className={styles.searchCardBody}>
+              <Form form={searchForm}>
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} sm={12} lg={8} xl={5}>
+                    <Form.Item name="userId" hidden>
+                      <Input />
+                    </Form.Item>
+                    <Form.Item<UserSearchType>
+                      label={'用户名称'}
+                      name="username"
+                      style={{ marginBottom: 0 }}
                     >
-                      搜索
-                    </Button>
-                    <Button
-                      icon={<Freshen width={16} height={16} />}
-                      onClick={() => handleResetSearch()}
+                      <Input placeholder={'请输入用户名称'} allowClear />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} lg={8} xl={5}>
+                    <Form.Item<UserSearchType>
+                      label={'手机号码'}
+                      name="phone"
+                      style={{ marginBottom: 0 }}
                     >
-                      重置
-                    </Button>
-                  </Space>
-                </Col>
-              </Row>
-            </Form>
+                      <Input placeholder={'请输入手机号码'} allowClear />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} lg={8} xl={4}>
+                    <Form.Item<UserSearchType>
+                      label={'状态'}
+                      name="status"
+                      style={{ marginBottom: 0 }}
+                    >
+                      <Select
+                        placeholder={'用户状态'}
+                        allowClear
+                        options={statusOptions.map((item) => ({
+                          label: item.dictLabel,
+                          value: item.dictValue,
+                        }))}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} sm={12} lg={8} xl={5}>
+                    <Form.Item<UserSearchType>
+                      label={'创建时间'}
+                      name="createTime"
+                      style={{ marginBottom: 0 }}
+                    >
+                      <RangePicker showTime style={{ width: '100%' }} />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} lg={8} xl={5}>
+                    <div className={styles.searchActions}>
+                      <Button
+                        type="primary"
+                        icon={<Search width={16} height={16} />}
+                        onClick={() => handleSearch()}
+                      >
+                        搜索
+                      </Button>
+                      <Button
+                        icon={<Freshen width={16} height={16} />}
+                        onClick={() => handleResetSearch()}
+                      >
+                        重置
+                      </Button>
+                    </div>
+                  </Col>
+                </Row>
+              </Form>
+            </div>
+          </div>
 
-            <Row className={styles.toolbar}>
+          {/* 卡片二：用户列表 */}
+          <div className={styles.tableCard}>
+            <div className={styles.tableCardHeader}>
+              <div className={styles.titleBlock}>
+                <span className={styles.cardTitle}>用户列表</span>
+                <span className={styles.cardSubtitle}>共 {pagination.total} 个用户</span>
+              </div>
               <Space wrap>
                 <Button
                   className={styles.toolButton}
@@ -563,27 +583,26 @@ const User: React.FC = () => {
                   导出
                 </Button>
               </Space>
-            </Row>
-          </div>
-
-          <div className={styles.body}>
-            <Table
-              rowSelection={{ type: 'checkbox', ...rowSelection }}
-              columns={columns}
-              rowKey="userId"
-              dataSource={userListData}
-              scroll={{ x: 1100 }}
-              pagination={{
-                current: pagination.current,
-                pageSize: pagination.pageSize,
-                total: pagination.total,
-                showSizeChanger: true,
-                showQuickJumper: true,
-                pageSizeOptions: ['10', '20', '50', '100'],
-                showTotal: (total) => `共 ${total} 条`,
-                onChange: (page, pageSize) => onChange(page, pageSize),
-              }}
-            />
+            </div>
+            <div className={styles.tableCardBody}>
+              <Table
+                rowSelection={{ type: 'checkbox', ...rowSelection }}
+                columns={columns}
+                rowKey="userId"
+                dataSource={userListData}
+                scroll={{ x: 1100 }}
+                pagination={{
+                  current: pagination.current,
+                  pageSize: pagination.pageSize,
+                  total: pagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  pageSizeOptions: ['10', '20', '50', '100'],
+                  showTotal: (total) => `共 ${total} 条`,
+                  onChange: (page, pageSize) => onChange(page, pageSize),
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -670,21 +689,20 @@ const User: React.FC = () => {
               <Col xs={24} md={12}>
                 <Form.Item<UserAddType> label="用户性别" name="sex">
                   <Radio.Group
-                    options={[
-                      { value: '0', label: '男' },
-                      { value: '1', label: '女' },
-                      { value: '2', label: '未知' },
-                    ]}
+                    options={sexOptions.map((item) => ({
+                      label: item.dictLabel,
+                      value: item.dictValue,
+                    }))}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item<UserAddType> label="状态" name="status">
                   <Radio.Group
-                    options={[
-                      { value: '1', label: '正常' },
-                      { value: '0', label: '停用' },
-                    ]}
+                    options={statusOptions.map((item) => ({
+                      label: item.dictLabel,
+                      value: item.dictValue,
+                    }))}
                   />
                 </Form.Item>
               </Col>

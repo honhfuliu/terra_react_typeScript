@@ -39,8 +39,12 @@ import {
   dictTypeListInfo,
   getDictDataInfo,
 } from '@/service/dict.ts';
+import { useDict } from '@/hooks/useDict.ts';
+import DictTag from '@/components/DictTag';
 
 const Dict: React.FC = () => {
+  const statusOptions = useDict('sys_status'); // 状态
+  const tagColorOptions = useDict('sys_tag_color'); // 标签样式
   const { message } = App.useApp();
   // 搜索框内容
   const [searchText, setSearchText] = useState('');
@@ -117,9 +121,7 @@ const Dict: React.FC = () => {
       key: 'status',
       width: 90,
       align: 'center',
-      render: (status: string) => (
-        <Tag color={status === '1' ? 'success' : 'error'}>{status === '1' ? '启用' : '停用'}</Tag>
-      ),
+      render: (status: string) => DictTag({ value: status, option: statusOptions }),
     },
     {
       title: '备注',
@@ -350,119 +352,122 @@ const Dict: React.FC = () => {
         {/* 左侧：字典目录面板 */}
         <Col xs={24} lg={7} xl={6} xxl={5}>
           <div className={styles.leftPanel}>
-        <div className={styles.panelHeader}>
-          <div className={styles.panelHeaderTitle}>
-            字典目录
-            <span className={styles.subtitle}>维护系统中的业务枚举</span>
-          </div>
-          <div className={styles.addButton} title="新增字典" onClick={handleAddDictType}>
-            <AddIcon width={16} height={16} />
-          </div>
-        </div>
-
-        <div className={styles.searchWrap}>
-          <Input
-            prefix={<SearchIcon width={16} height={16} />}
-            placeholder="搜索字典名称或编码"
-            allowClear
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-        </div>
-
-        <div className={styles.dictList}>
-          {filteredDictList.map((item) => (
-            <div
-              key={item.dictId}
-              className={`${styles.dictItem} ${activeDictId === item.dictId ? styles.active : ''}`}
-              onClick={() => setActiveDictId(item.dictId)}
-            >
-              <div className={styles.dictIcon}>
-                <DictIcon />
+            <div className={styles.panelHeader}>
+              <Tag c>111</Tag>
+              <div className={styles.panelHeaderTitle}>
+                字典目录
+                <span className={styles.subtitle}>维护系统中的业务枚举</span>
               </div>
-              <div className={styles.dictInfo}>
-                <div className={styles.dictName}>{item.dictName}</div>
-                <div className={styles.dictCode}>{item.dictType}</div>
+              <div className={styles.addButton} title="新增字典" onClick={handleAddDictType}>
+                <AddIcon width={16} height={16} />
               </div>
-              <div className={styles.dictCount}>{item.count}</div>
             </div>
-          ))}
-        </div>
-        </div>
+
+            <div className={styles.searchWrap}>
+              <Input
+                prefix={<SearchIcon width={16} height={16} />}
+                placeholder="搜索字典名称或编码"
+                allowClear
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+            </div>
+
+            <div className={styles.dictList}>
+              {filteredDictList.map((item) => (
+                <div
+                  key={item.dictId}
+                  className={`${styles.dictItem} ${activeDictId === item.dictId ? styles.active : ''}`}
+                  onClick={() => setActiveDictId(item.dictId)}
+                >
+                  <div className={styles.dictIcon}>
+                    <DictIcon />
+                  </div>
+                  <div className={styles.dictInfo}>
+                    <div className={styles.dictName}>{item.dictName}</div>
+                    <div className={styles.dictCode}>{item.dictType}</div>
+                  </div>
+                  <div className={styles.dictCount}>{item.count}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </Col>
 
         {/* 右侧：字典详情面板 */}
         <Col xs={24} lg={17} xl={18} xxl={19}>
           <div className={styles.rightPanel}>
-        <div className={styles.detailHeader}>
-          <div className={styles.detailTitle}>
-            <div className={styles.titleMain}>{activeDict?.dictName ?? '请选择字典'}</div>
-            <div className={styles.titleDesc}>
-              {activeDict ? `共 ${activeDict.count} 个字典值` : ''}
+            <div className={styles.detailHeader}>
+              <div className={styles.detailTitle}>
+                <div className={styles.titleMain}>{activeDict?.dictName ?? '请选择字典'}</div>
+                <div className={styles.titleDesc}>
+                  {activeDict ? `共 ${activeDict.count} 个字典值` : ''}
+                </div>
+              </div>
+              <div className={styles.headerActions}>
+                <div className={styles.editButton}>
+                  <Button icon={<EditOutlined />} onClick={handleEditDictType}>
+                    编辑字典
+                  </Button>
+                </div>
+                <div className={styles.addValueButton}>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddDictData}>
+                    添加字典值
+                  </Button>
+                </div>
+                <div className={styles.deleteButton}>
+                  <Popconfirm
+                    title="确认删除"
+                    description={`确定要删除「${activeDict?.dictName ?? ''}」吗？`}
+                    okText="确定"
+                    cancelText="取消"
+                    onConfirm={handleDeleteDictType}
+                    disabled={!activeDict}
+                  >
+                    <Button danger icon={<DeleteOutlined />} disabled={!activeDict}>
+                      删除字典
+                    </Button>
+                  </Popconfirm>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className={styles.headerActions}>
-            <div className={styles.editButton}>
-              <Button icon={<EditOutlined />} onClick={handleEditDictType}>
-                编辑字典
-              </Button>
-            </div>
-            <div className={styles.addValueButton}>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddDictData}>
-                添加字典值
-              </Button>
-            </div>
-            <div className={styles.deleteButton}>
-              <Popconfirm
-                title="确认删除"
-                description={`确定要删除「${activeDict?.dictName ?? ''}」吗？`}
-                okText="确定"
-                cancelText="取消"
-                onConfirm={handleDeleteDictType}
-                disabled={!activeDict}
-              >
-                <Button danger icon={<DeleteOutlined />} disabled={!activeDict}>
-                  删除字典
-                </Button>
-              </Popconfirm>
-            </div>
-          </div>
-        </div>
 
-        {activeDict && (
-          <div className={styles.dictInfoBar}>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>字典编码：</span>
-              <span className={`${styles.infoValue} ${styles.code}`}>{activeDict.dictType}</span>
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>状态：</span>
-              <span className={styles.statusTag}>
-                <Tag color={activeDict.status === '1' ? 'success' : 'error'}>
-                  {activeDict.status === '1' ? '启用' : '停用'}
-                </Tag>
-              </span>
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>修改时间：</span>
-              <span className={`${styles.infoValue} ${styles.time}`}>{activeDict.updateTime}</span>
-            </div>
-          </div>
-        )}
+            {activeDict && (
+              <div className={styles.dictInfoBar}>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>字典编码：</span>
+                  <span className={`${styles.infoValue} ${styles.code}`}>
+                    {activeDict.dictType}
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>状态：</span>
+                  <span className={styles.statusTag}>
+                    <DictTag value={activeDict.status} option={statusOptions} />
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>修改时间：</span>
+                  <span className={`${styles.infoValue} ${styles.time}`}>
+                    {activeDict.updateTime}
+                  </span>
+                </div>
+              </div>
+            )}
 
-        <div className={styles.tableSection}>
-          <div className={styles.tableContainer}>
-            <Table<DictDataListTypeItem>
-              columns={columns}
-              dataSource={dictValueRows}
-              rowKey="dictCode"
-              pagination={false}
-              scroll={{ x: 800 }}
-            />
+            <div className={styles.tableSection}>
+              <div className={styles.tableContainer}>
+                <Table<DictDataListTypeItem>
+                  columns={columns}
+                  dataSource={dictValueRows}
+                  rowKey="dictCode"
+                  pagination={false}
+                  scroll={{ x: 800 }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        </div>
-      </Col>
+        </Col>
       </Row>
       {/*字典添加/编辑*/}
       <div>
@@ -513,10 +518,10 @@ const Dict: React.FC = () => {
                 <Col xs={24} md={12}>
                   <Form.Item<AddDictType> label="状态" name="status">
                     <Radio.Group
-                      options={[
-                        { value: '1', label: '启用' },
-                        { value: '0', label: '停用' },
-                      ]}
+                      options={statusOptions.map((item) => ({
+                        label: item.dictLabel,
+                        value: item.dictValue,
+                      }))}
                     />
                   </Form.Item>
                 </Col>
@@ -601,14 +606,10 @@ const Dict: React.FC = () => {
                     <Select
                       placeholder={'请选择标签样式'}
                       allowClear
-                      options={[
-                        { value: 'default', label: '默认（default）' },
-                        { value: 'primary', label: '主要（primary）' },
-                        { value: 'success', label: '成功（success）' },
-                        { value: 'info', label: '信息（info）' },
-                        { value: 'warning', label: '警告（warning）' },
-                        { value: 'danger', label: '危险（danger）' },
-                      ]}
+                      options={tagColorOptions.map((item) => ({
+                        label: item.dictLabel,
+                        value: item.dictValue,
+                      }))}
                     />
                   </Form.Item>
                 </Col>
@@ -620,10 +621,10 @@ const Dict: React.FC = () => {
                 <Col xs={24} md={12}>
                   <Form.Item<AddDictDataType> label="状态" name="status">
                     <Radio.Group
-                      options={[
-                        { value: '1', label: '启用' },
-                        { value: '0', label: '停用' },
-                      ]}
+                      options={statusOptions.map((item) => ({
+                        label: item.dictLabel,
+                        value: item.dictValue,
+                      }))}
                     />
                   </Form.Item>
                 </Col>
