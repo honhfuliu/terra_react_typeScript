@@ -50,7 +50,7 @@ import {
   UserRow,
   UserSearchType,
 } from '@/service/user.ts';
-import { addRole, RoleNode, roleOptions } from '@/service/role.ts';
+import { RoleNode, roleOptions } from '@/service/role.ts';
 
 const User: React.FC = () => {
   const { message } = App.useApp();
@@ -193,15 +193,15 @@ const User: React.FC = () => {
   };
   // 重置密码提交
   const handleResetPasswordSubmit = async () => {
-    let value: ResetPasswordType;
+    let values: ResetPasswordType;
     try {
-      value = await resetPasswordForm.validateFields();
+      values = await resetPasswordForm.validateFields();
     } catch (e) {
       console.log('表单校验失败：', e);
       return;
     }
     try {
-      await resetPassword(value);
+      await resetPassword(values);
       message.success('操作成功');
       setResetPasswordModalOpen(false);
       resetPasswordForm.resetFields();

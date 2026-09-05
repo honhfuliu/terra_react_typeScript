@@ -1,0 +1,363 @@
+.layout {
+  width: 100%;
+  min-height: 100%;
+  background: var(--bg-color);
+}
+
+// 左侧：字典目录面板
+.leftPanel {
+  height: 100%;
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+
+  .panelHeaderTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+
+    .subtitle {
+      display: block;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-color-secondary);
+      margin-top: 4px;
+    }
+  }
+
+  .addButton {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    transition: all 0.2s;
+
+    &:hover {
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+      background: var(--btn-bg);
+    }
+  }
+}
+
+.searchWrap {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+
+  :global(.ant-input-affix-wrapper) {
+    border-radius: 8px;
+    background: var(--search-bg);
+    border: 1px solid transparent;
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--primary-color);
+    }
+  }
+}
+
+.dictList {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 12px;
+
+  .dictItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+
+    &:hover {
+      background: var(--menu-hover);
+    }
+
+    &.active {
+      background: var(--menu-active);
+      border-left-color: var(--primary-color);
+    }
+
+    .dictIcon {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      border-radius: 8px;
+      background: var(--btn-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-color);
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .dictInfo {
+      flex: 1;
+      min-width: 0;
+
+      .dictName {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .dictCode {
+        font-size: 12px;
+        color: var(--text-color-secondary);
+        margin-top: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    .dictCount {
+      font-size: 13px;
+      color: var(--text-color-secondary);
+      flex-shrink: 0;
+    }
+  }
+}
+
+// 右侧：字典详情面板
+.rightPanel {
+  height: 100%;
+  min-width: 0;
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 12px;
+
+  .detailTitle {
+    .titleMain {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .titleDesc {
+      font-size: 13px;
+      color: var(--text-color-secondary);
+      margin-top: 6px;
+    }
+  }
+
+  .headerActions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+}
+
+.editButton {
+  :global(.ant-btn) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+// 弹窗表单区域
+.modalBody {
+  padding-top: 8px;
+}
+
+.addValueButton {
+  :global(.ant-btn-primary) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.deleteButton {
+  :global(.ant-btn) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+// 字典基本信息栏
+.dictInfoBar {
+  margin: 20px 24px 0;
+  padding: 14px 20px;
+  background: var(--search-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  font-size: 14px;
+
+  .infoItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .infoLabel {
+      color: var(--text-color-secondary);
+    }
+
+    .infoValue {
+      color: var(--text-color);
+
+      &.code {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        background: rgba(22, 119, 255, 0.08);
+        color: var(--primary-color);
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+
+      &.time {
+        color: var(--text-color-secondary);
+      }
+    }
+  }
+}
+
+.statusTag {
+  :global(.ant-tag) {
+    margin: 0;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+}
+
+// 字典值表格区域
+.tableSection {
+  flex: 1;
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tableContainer {
+  flex: 1;
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-color-secondary);
+
+  .emptyIcon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+
+    svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+    }
+  }
+
+  .emptyText {
+    font-size: 14px;
+  }
+}
+
+.actionLinks {
+  :global(.ant-btn-link) {
+    padding: 0 4px;
+    height: auto;
+  }
+
+  :global(.ant-btn-link + .ant-btn-link) {
+    margin-left: 4px;
+  }
+}
+
+// 响应式：小屏时上下堆叠（由 Row/Col 栅格控制宽度），目录面板限高滚动
+@media (max-width: 992px) {
+  .leftPanel {
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 575px) {
+  .leftPanel,
+  .rightPanel {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .panelHeader {
+    padding: 14px 16px;
+  }
+
+  .searchWrap {
+    padding: 12px 16px;
+  }
+
+  .detailHeader {
+    padding: 14px 16px;
+  }
+
+  .dictInfoBar {
+    margin: 16px 16px 0;
+    padding: 12px 14px;
+    gap: 12px 24px;
+  }
+
+  .tableSection {
+    padding: 14px 16px 16px;
+  }
+}

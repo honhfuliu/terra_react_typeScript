@@ -399,6 +399,7 @@ const Role: React.FC = () => {
                 className={styles.toolButton}
                 onClick={showModal}
                 icon={<Add width={16} height={16} />}
+                size={'small'}
               >
                 新增
               </Button>

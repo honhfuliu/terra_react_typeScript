@@ -40,6 +40,7 @@ import {
   updateBatchDeptSort,
 } from '@/service/dept.ts';
 import * as React from 'react';
+import { FilterOutlined } from '@ant-design/icons';
 import { removeEmptyChildren } from '@/utils/tree.ts';
 
 const Dept: React.FC = () => {
@@ -69,6 +70,13 @@ const Dept: React.FC = () => {
       item.deptId,
       ...(item.children ? getAllKeys(item.children) : []),
     ]);
+  };
+  // 统计树形列表中的部门总数（含子部门）
+  const countTreeNodes = (list: DeptTable[]): number => {
+    return list.reduce(
+      (total, item) => total + 1 + (item.children ? countTreeNodes(item.children) : 0),
+      0,
+    );
   };
   // 展开折叠控制
   const handleExpandToggle = () => {
@@ -297,85 +305,109 @@ const Dept: React.FC = () => {
       /* empty */
     }
   };
+  const totalDeptCount = countTreeNodes(deptTreeList);
   return (
     <div className={styles.layout}>
-      <div className={styles.header}>
-        <Form form={searchForm}>
-          <Row gutter={[16, 12]}>
-            <Col xs={24} sm={12} lg={8} xl={6}>
-              <Form.Item<DeptSearchType> label={'部门名称'} name="deptName">
-                <Input placeholder={'请输入部门名称'} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12} lg={8} xl={6}>
-              <Form.Item<DeptSearchType> label={'状态'} name="status">
-                <Select
-                  placeholder={'菜单状态'}
-                  options={[
-                    { value: 1, label: '启用' },
-                    { value: 0, label: '停用' },
-                  ]}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} lg={8} xl={6}>
-              <Space wrap>
-                <Button
-                  type="primary"
-                  icon={<Search width={16} height={16} />}
-                  onClick={handleSearch}
+      {/* 卡片一：筛选条件 */}
+      <div className={styles.searchCard}>
+        <div className={styles.searchCardHeader}>
+          <div className={styles.titleWrap}>
+            <span className={styles.titleIcon}>
+              <FilterOutlined />
+            </span>
+            <span className={styles.cardTitle}>筛选条件</span>
+            <span className={styles.cardSubtitle}>快速定位部门信息</span>
+          </div>
+        </div>
+        <div className={styles.searchCardBody}>
+          <Form form={searchForm}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} lg={8} xl={7}>
+                <Form.Item<DeptSearchType>
+                  label={'部门名称'}
+                  name="deptName"
+                  style={{ marginBottom: 0 }}
                 >
-                  搜索
-                </Button>
-                <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
-                  重置
-                </Button>
-              </Space>
-            </Col>
-          </Row>
-
-          <Row className={styles.toolbar}>
-            <Space wrap>
-              <Button
-                className={styles.toolButton}
-                icon={<Add width={16} height={16} />}
-                onClick={showModal}
-              >
-                新增
-              </Button>
-              <Button
-                className={styles.toolButton}
-                icon={<Save width={16} height={16} />}
-                onClick={handleBatchSaveSort}
-              >
-                保存排序
-              </Button>
-              <Button
-                className={styles.toolButton}
-                icon={<Expand width={16} height={16} />}
-                onClick={handleExpandToggle}
-              >
-                展开/折叠
-              </Button>
-            </Space>
-          </Row>
-        </Form>
+                  <Input placeholder={'请输入部门名称'} allowClear />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12} lg={8} xl={7}>
+                <Form.Item<DeptSearchType> label={'状态'} name="status" style={{ marginBottom: 0 }}>
+                  <Select
+                    placeholder={'部门状态'}
+                    allowClear
+                    options={[
+                      { value: 1, label: '启用' },
+                      { value: 0, label: '停用' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} lg={8} xl={10}>
+                <div className={styles.searchActions}>
+                  <Button
+                    type="primary"
+                    icon={<Search width={16} height={16} />}
+                    onClick={handleSearch}
+                  >
+                    搜索
+                  </Button>
+                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                    重置
+                  </Button>
+                </div>
+              </Col>
+            </Row>
+          </Form>
+        </div>
       </div>
 
-      <div className={styles.body}>
-        <Table
-          columns={columns}
-          dataSource={deptTreeList}
-          rowKey="deptId"
-          pagination={false}
-          scroll={{ x: 970 }}
-          expandable={{
-            expandedRowKeys,
-            onExpandedRowsChange: (keys) => {
-              setExpandedRowKeys([...keys]);
-            },
-          }}
-        />
+      {/* 卡片二：部门列表 */}
+      <div className={styles.tableCard}>
+        <div className={styles.tableCardHeader}>
+          <div className={styles.titleBlock}>
+            <span className={styles.cardTitle}>部门列表</span>
+            <span className={styles.cardSubtitle}>共 {totalDeptCount} 个部门</span>
+          </div>
+          <Space wrap>
+            <Button
+              className={styles.toolButton}
+              icon={<Add width={16} height={16} />}
+              onClick={showModal}
+            >
+              新增
+            </Button>
+            <Button
+              className={styles.toolButton}
+              icon={<Save width={16} height={16} />}
+              onClick={handleBatchSaveSort}
+            >
+              保存排序
+            </Button>
+            <Button
+              className={styles.toolButton}
+              icon={<Expand width={16} height={16} />}
+              onClick={handleExpandToggle}
+            >
+              展开/折叠
+            </Button>
+          </Space>
+        </div>
+        <div className={styles.tableCardBody}>
+          <Table
+            columns={columns}
+            dataSource={deptTreeList}
+            rowKey="deptId"
+            pagination={false}
+            scroll={{ x: 970 }}
+            expandable={{
+              expandedRowKeys,
+              onExpandedRowsChange: (keys) => {
+                setExpandedRowKeys([...keys]);
+              },
+            }}
+          />
+        </div>
       </div>
       <div>
         <Modal
