@@ -17,25 +17,41 @@ export interface MenuItem {
 interface PermissionStore {
   menus: MenuItem[];
   routes: AppRoute;
+  permissions: string[];
+  roles: string[];
 }
 
 const initialState: PermissionStore = {
   menus: [],
   routes: {},
+  permissions: [],
+  roles: [],
 };
 
 const permissionStore = createSlice({
   name: 'permission',
   initialState,
   reducers: {
-    setPermission(state, action: PayloadAction<{ menus: MenuItem[]; routes: AppRoute }>) {
+    setPermission(
+      state,
+      action: PayloadAction<{
+        menus: MenuItem[];
+        routes: AppRoute;
+        permissions: string[];
+        roles: string[];
+      }>,
+    ) {
       state.routes = action.payload.routes;
       state.menus = action.payload.menus;
+      state.permissions = action.payload.permissions;
+      state.roles = action.payload.roles;
     },
 
     clearPermission(state) {
       state.menus = [];
       state.routes = {};
+      state.permissions = [];
+      state.roles = [];
     },
   },
 });

@@ -52,6 +52,7 @@ import {
 import { RoleNode, roleOptions } from '@/service/role.ts';
 import { useDict } from '@/hooks/useDict.ts';
 import DictTag from '@/components/DictTag';
+import Auth from '@/components/Auth';
 
 const User: React.FC = () => {
   const sexOptions = useDict('sys_sex'); // 性别状态
@@ -251,53 +252,58 @@ const User: React.FC = () => {
       render: (_, record) => (
         <Space size={0}>
           {/* 常用操作 */}
-          <Button
-            type="link"
-            size="small"
-            icon={<Update width={16} height={16} />}
-            onClick={() => handleEdit(record.userId)}
-          >
-            修改
-          </Button>
-
-          <Popconfirm
-            title="确认删除"
-            description={`确定要删除「${record.nickname}」吗？`}
-            onConfirm={() => handleDelete(record.userId)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" icon={<Delete width={16} height={16} />}>
-              删除
+          <Auth permission={'system:user:edit'}>
+            <Button
+              type="link"
+              size="small"
+              icon={<Update width={16} height={16} />}
+              onClick={() => handleEdit(record.userId)}
+            >
+              修改
             </Button>
-          </Popconfirm>
+          </Auth>
+          <Auth permission={'system:user:delete'}>
+            <Popconfirm
+              title="确认删除"
+              description={`确定要删除「${record.nickname}」吗？`}
+              onConfirm={() => handleDelete(record.userId)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
+                删除
+              </Button>
+            </Popconfirm>
+          </Auth>
 
           {/* 更多操作 */}
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: 'resetPassword',
-                  label: (
-                    <Button type="link" size="small">
-                      重置密码
-                    </Button>
-                  ),
+          <Auth permission={'system:user:resetPwd'}>
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 'resetPassword',
+                    label: (
+                      <Button type="link" size="small">
+                        重置密码
+                      </Button>
+                    ),
+                  },
+                ],
+                onClick: ({ key }) => {
+                  switch (key) {
+                    case 'resetPassword':
+                      handleResetPassword(record);
+                      break;
+                  }
                 },
-              ],
-              onClick: ({ key }) => {
-                switch (key) {
-                  case 'resetPassword':
-                    handleResetPassword(record);
-                    break;
-                }
-              },
-            }}
-          >
-            <Button type="link" size="small">
-              更多
-            </Button>
-          </Dropdown>
+              }}
+            >
+              <Button type="link" size="small">
+                更多
+              </Button>
+            </Dropdown>
+          </Auth>
         </Space>
       ),
     },
@@ -550,24 +556,29 @@ const User: React.FC = () => {
                 <span className={styles.cardSubtitle}>共 {pagination.total} 个用户</span>
               </div>
               <Space wrap>
-                <Button
-                  className={styles.toolButton}
-                  icon={<Add width={16} height={16} />}
-                  onClick={handleAdd}
-                >
-                  新增
-                </Button>
-                <Popconfirm
-                  title="确认删除"
-                  description="确定要删除选中的用户吗？"
-                  onConfirm={handleDeleteBatch}
-                  okText="确定"
-                  cancelText="取消"
-                >
-                  <Button className={styles.toolButton} icon={<Delete width={16} height={16} />}>
-                    删除
+                <Auth permission={'system:user:add'}>
+                  <Button
+                    className={styles.toolButton}
+                    icon={<Add width={16} height={16} />}
+                    onClick={handleAdd}
+                  >
+                    新增
                   </Button>
-                </Popconfirm>
+                </Auth>
+
+                <Auth permission={'system:user:delete'}>
+                  <Popconfirm
+                    title="确认删除"
+                    description="确定要删除选中的用户吗？"
+                    onConfirm={handleDeleteBatch}
+                    okText="确定"
+                    cancelText="取消"
+                  >
+                    <Button className={styles.toolButton} icon={<Delete width={16} height={16} />}>
+                      删除
+                    </Button>
+                  </Popconfirm>
+                </Auth>
                 <Button
                   className={styles.toolButton}
                   icon={<Download width={16} height={16} />}

@@ -41,6 +41,7 @@ import {
 import { removeEmptyChildren } from '@/utils/tree.ts';
 import { useDict } from '@/hooks/useDict.ts';
 import DictTag from '@/components/DictTag';
+import Auth from '@/components/Auth';
 import { FilterOutlined } from '@ant-design/icons';
 
 const Menu: React.FC = () => {
@@ -136,30 +137,6 @@ const Menu: React.FC = () => {
       key: 'menuType',
       width: 100,
       render: (status: string) => DictTag({ value: status, option: menuTypeOptions }),
-      // render: (type: string) => {
-      //   const typeMap: Record<string, { label: string; color: string }> = {
-      //     M: {
-      //       label: '目录',
-      //       color: 'blue',
-      //     },
-      //     C: {
-      //       label: '菜单',
-      //       color: 'green',
-      //     },
-      //     B: {
-      //       label: '按钮',
-      //       color: 'orange',
-      //     },
-      //   };
-      //
-      //   const config = typeMap[type];
-      //
-      //   if (!config) {
-      //     return type;
-      //   }
-      //
-      //   return <Tag color={config.color}>{config.label}</Tag>;
-      // },
     },
     {
       title: '排序',
@@ -205,67 +182,90 @@ const Menu: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space className={styles.actionGroup} size="small">
-          <Button
-            className={styles.actionLink}
-            type="link"
-            size="small"
-            icon={<Update width={16} height={16} />}
-            onClick={() => getMenuByIdInfo(record.menuId)}
-          >
-            编辑
-          </Button>
-          {record.menuType !== 'B' && record.menuType !== 'F' && (
+          <Auth permission={'system:menu:edit'}>
             <Button
               className={styles.actionLink}
               type="link"
               size="small"
-              icon={<Add width={16} height={16} />}
-              onClick={() => handleAddChild(record.menuId)}
+              icon={<Update width={16} height={16} />}
+              onClick={() => getMenuByIdInfo(record.menuId)}
             >
-              添加子菜单
+              编辑
             </Button>
+          </Auth>
+          {record.menuType !== 'B' && record.menuType !== 'F' && (
+            <Auth permission={'system:menu:add'}>
+              <Button
+                className={styles.actionLink}
+                type="link"
+                size="small"
+                icon={<Add width={16} height={16} />}
+                onClick={() => handleAddChild(record.menuId)}
+              >
+                添加子菜单
+              </Button>
+            </Auth>
           )}
-          <Popconfirm
-            title="确认删除"
-            description={`确定要删除「${record.menuName}」吗？`}
-            onConfirm={() => handleDelete(record.menuId)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
-              删除
-            </Button>
-          </Popconfirm>
+          <Auth permission={'system:menu:delete'}>
+            <Popconfirm
+              title="确认删除"
+              description={`确定要删除「${record.menuName}」吗？`}
+              onConfirm={() => handleDelete(record.menuId)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
+                删除
+              </Button>
+            </Popconfirm>
+          </Auth>
         </Space>
       ),
     },
   ];
-  // 添加子部门
+  // 添加子菜单
   const handleAddChild = async (id: number) => {
+    menuForm.resetFields();
+    setMenuType('M');
+    setModalTitle('添加子菜单');
     menuForm.setFieldsValue({
+      menuType: 'M',
+      menuSort: 0,
+      status: '1',
+      visible: '1',
+      keepAlive: '1',
       parentId: id,
     });
     await showModal();
   };
   // 对话框
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('新增菜单');
 
+  // 加载上级菜单树并打开弹窗（不设置表单值，避免覆盖调用方已设的值）
   const showModal = async () => {
     try {
       const data = await menuOptions(true);
       setMenuTree(data);
-      menuForm.setFieldsValue({
-        menuType: 'M',
-        menuSort: 0,
-        status: '1',
-        visible: '1',
-        keepAlive: '1',
-        parentId: 0,
-      });
       setIsModalOpen(true);
     } catch {
       /* empty */
     }
+  };
+  // 新增
+  const handleAdd = async () => {
+    menuForm.resetFields();
+    setMenuType('M');
+    setModalTitle('新增菜单');
+    menuForm.setFieldsValue({
+      menuType: 'M',
+      menuSort: 0,
+      status: '1',
+      visible: '1',
+      keepAlive: '1',
+      parentId: 0,
+    });
+    await showModal();
   };
 
   // 获取展示数据
@@ -287,19 +287,19 @@ const Menu: React.FC = () => {
     let value: MenuAddType;
     try {
       value = await menuForm.validateFields();
-      console.log(value);
     } catch (e) {
       console.log('表单校验失败：', e);
       return;
     }
     try {
+      // 新增和修改共用同一接口，后端通过 menuId 是否存在来区分
       await addMenu(value);
       message.success('操作成功');
       setIsModalOpen(false);
       menuForm.resetFields();
       await getMenuList();
     } catch (e) {
-      console.error('新增菜单失败：', e);
+      console.error('操作失败：', e);
     }
   };
   // 关闭弹框
@@ -312,6 +312,8 @@ const Menu: React.FC = () => {
     try {
       const data = await getMenuById(id);
       setMenuType(data.menuType);
+      setModalTitle('编辑菜单');
+      menuForm.resetFields();
       await showModal();
       menuForm.setFieldsValue(data);
     } catch (e) {
@@ -408,20 +410,24 @@ const Menu: React.FC = () => {
             <span className={styles.cardSubtitle}>共 {totalMenuCount} 个菜单</span>
           </div>
           <Space wrap>
-            <Button
-              className={styles.toolButton}
-              icon={<Add width={16} height={16} />}
-              onClick={showModal}
-            >
-              新增
-            </Button>
-            <Button
-              className={styles.toolButton}
-              icon={<Save width={16} height={16} />}
-              onClick={handleBatchSaveSort}
-            >
-              保存排序
-            </Button>
+            <Auth permission={'system:menu:add'}>
+              <Button
+                className={styles.toolButton}
+                icon={<Add width={16} height={16} />}
+                onClick={handleAdd}
+              >
+                新增
+              </Button>
+            </Auth>
+            <Auth permission={'system:menu:saveSort'}>
+              <Button
+                className={styles.toolButton}
+                icon={<Save width={16} height={16} />}
+                onClick={handleBatchSaveSort}
+              >
+                保存排序
+              </Button>
+            </Auth>
             <Button
               className={styles.toolButton}
               icon={<Expand width={16} height={16} />}
@@ -452,7 +458,7 @@ const Menu: React.FC = () => {
         <div>
           <Modal
             width={screens.md ? 720 : 'calc(100vw - 32px)'}
-            title="菜单管理"
+            title={modalTitle}
             closable={{ 'aria-label': 'Custom Close Button' }}
             open={isModalOpen}
             onCancel={handleCancel}

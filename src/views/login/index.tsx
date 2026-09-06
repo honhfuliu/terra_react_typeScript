@@ -16,11 +16,19 @@ const Login: React.FC = () => {
   };
   const navigate = useNavigate();
 
-  // 登录
-  const loginApi = async (data: LoginFormType) => {
+  // 登录表单效验
+  const handleLogin = async () => {
+    let values: LoginFormType;
     try {
-      const result = await login(data);
-      console.log(data);
+      values = await form.validateFields();
+      console.log('获取到的表单数据：', values);
+      // await loginApi(values);
+    } catch (e) {
+      console.log('表单验证失败', e);
+      return;
+    }
+    try {
+      const result = await login(values);
       if (result) {
         storage.set('$_token', result.token);
         const userInfo = {
@@ -28,25 +36,11 @@ const Login: React.FC = () => {
           nickname: result.nickname,
         };
         storage.set('$_user', JSON.stringify(userInfo));
-
         await initPermission();
         navigate('/index');
       }
-    } catch {
-      /* empty */
-    } finally {
-      /* empty */
-    }
-  };
-
-  // 登录表单效验
-  const handleLogin = async () => {
-    try {
-      const values = await form.validateFields();
-      console.log('获取到的表单数据：', values);
-      await loginApi(values);
     } catch (e) {
-      console.log('表单验证失败', e);
+      console.error(e);
     }
   };
   return (

@@ -19,7 +19,6 @@ import {
   Table,
   TableColumnsType,
   TreeSelect,
-  Tag,
   InputNumber,
   Radio,
   App,
@@ -44,6 +43,7 @@ import { FilterOutlined } from '@ant-design/icons';
 import { removeEmptyChildren } from '@/utils/tree.ts';
 import { useDict } from '@/hooks/useDict.ts';
 import DictTag from '@/components/DictTag';
+import Auth from '@/components/Auth';
 
 const Dept: React.FC = () => {
   const statusOptions = useDict('sys_status'); // 状态
@@ -123,6 +123,7 @@ const Dept: React.FC = () => {
     console.log('deptTreeList', deptTreeList);
     try {
       await updateBatchDeptSort(deptTreeList);
+      message.success('保存成功');
       await getDeptList();
     } catch {
       /* empty */
@@ -178,36 +179,42 @@ const Dept: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space className={styles.actionGroup} size="small">
-          <Button
-            className={styles.actionLink}
-            type="link"
-            size="small"
-            icon={<Update width={16} height={16} />}
-            onClick={() => getDeptByIdInfo(record.deptId)}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确认删除"
-            description={`确定要删除 "${record.deptName}" 吗？`}
-            onConfirm={() => handleDelete(record.deptId)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
-              删除
+          <Auth permission={'system:dept:edit'}>
+            <Button
+              className={styles.actionLink}
+              type="link"
+              size="small"
+              icon={<Update width={16} height={16} />}
+              onClick={() => getDeptByIdInfo(record.deptId)}
+            >
+              编辑
             </Button>
-          </Popconfirm>
+          </Auth>
+          <Auth permission={'system:dept:delete'}>
+            <Popconfirm
+              title="确认删除"
+              description={`确定要删除 "${record.deptName}" 吗？`}
+              onConfirm={() => handleDelete(record.deptId)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
+                删除
+              </Button>
+            </Popconfirm>
+          </Auth>
 
-          <Button
-            className={styles.actionLink}
-            type="link"
-            size="small"
-            icon={<Add width={16} height={16} />}
-            onClick={() => handleAddChild(record.deptId)}
-          >
-            添加子部门
-          </Button>
+          <Auth permission={'system:dept:add'}>
+            <Button
+              className={styles.actionLink}
+              type="link"
+              size="small"
+              icon={<Add width={16} height={16} />}
+              onClick={() => handleAddChild(record.deptId)}
+            >
+              添加子部门
+            </Button>
+          </Auth>
         </Space>
       ),
     },
@@ -371,20 +378,24 @@ const Dept: React.FC = () => {
             <span className={styles.cardSubtitle}>共 {totalDeptCount} 个部门</span>
           </div>
           <Space wrap>
-            <Button
-              className={styles.toolButton}
-              icon={<Add width={16} height={16} />}
-              onClick={showModal}
-            >
-              新增
-            </Button>
-            <Button
-              className={styles.toolButton}
-              icon={<Save width={16} height={16} />}
-              onClick={handleBatchSaveSort}
-            >
-              保存排序
-            </Button>
+            <Auth permission={'system:dept:add'}>
+              <Button
+                className={styles.toolButton}
+                icon={<Add width={16} height={16} />}
+                onClick={showModal}
+              >
+                新增
+              </Button>
+            </Auth>
+            <Auth permission={'system:dept:saveSort'}>
+              <Button
+                className={styles.toolButton}
+                icon={<Save width={16} height={16} />}
+                onClick={handleBatchSaveSort}
+              >
+                保存排序
+              </Button>
+            </Auth>
             <Button
               className={styles.toolButton}
               icon={<Expand width={16} height={16} />}

@@ -41,6 +41,7 @@ import {
 } from '@/service/dict.ts';
 import { useDict } from '@/hooks/useDict.ts';
 import DictTag from '@/components/DictTag';
+import Auth from '@/components/Auth';
 
 const Dict: React.FC = () => {
   const statusOptions = useDict('sys_status'); // 状态
@@ -137,32 +138,36 @@ const Dict: React.FC = () => {
       align: 'center',
       render: (_, record) => (
         <Space size={8} className={styles.actionLinks}>
-          <Button
-            type="link"
-            size="small"
-            icon={<UpdateIcon width={14} height={14} />}
-            aria-label={`修改-${record.dictLabel}`}
-            onClick={() => handleEditDictData(record)}
-          >
-            修改
-          </Button>
-          <Popconfirm
-            title="确认删除"
-            description={`确定要删除「${record.dictLabel}」吗？`}
-            okText="确定"
-            cancelText="取消"
-            onConfirm={() => handleDeleteDictData(record)}
-          >
+          <Auth permission={'system:dict:data:edit'}>
             <Button
               type="link"
               size="small"
-              danger
-              icon={<DeleteIcon width={14} height={14} />}
-              aria-label={`删除-${record.dictLabel}`}
+              icon={<UpdateIcon width={14} height={14} />}
+              aria-label={`修改-${record.dictLabel}`}
+              onClick={() => handleEditDictData(record)}
             >
-              删除
+              修改
             </Button>
-          </Popconfirm>
+          </Auth>
+          <Auth permission={'system:dict:data:delete'}>
+            <Popconfirm
+              title="确认删除"
+              description={`确定要删除「${record.dictLabel}」吗？`}
+              okText="确定"
+              cancelText="取消"
+              onConfirm={() => handleDeleteDictData(record)}
+            >
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteIcon width={14} height={14} />}
+                aria-label={`删除-${record.dictLabel}`}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          </Auth>
         </Space>
       ),
     },
@@ -353,14 +358,15 @@ const Dict: React.FC = () => {
         <Col xs={24} lg={7} xl={6} xxl={5}>
           <div className={styles.leftPanel}>
             <div className={styles.panelHeader}>
-              <Tag c>111</Tag>
               <div className={styles.panelHeaderTitle}>
                 字典目录
                 <span className={styles.subtitle}>维护系统中的业务枚举</span>
               </div>
-              <div className={styles.addButton} title="新增字典" onClick={handleAddDictType}>
-                <AddIcon width={16} height={16} />
-              </div>
+              <Auth permission={'system:dict:type:add'}>
+                <div className={styles.addButton} title="新增字典" onClick={handleAddDictType}>
+                  <AddIcon width={16} height={16} />
+                </div>
+              </Auth>
             </div>
 
             <div className={styles.searchWrap}>
@@ -405,30 +411,36 @@ const Dict: React.FC = () => {
                 </div>
               </div>
               <div className={styles.headerActions}>
-                <div className={styles.editButton}>
-                  <Button icon={<EditOutlined />} onClick={handleEditDictType}>
-                    编辑字典
-                  </Button>
-                </div>
-                <div className={styles.addValueButton}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddDictData}>
-                    添加字典值
-                  </Button>
-                </div>
-                <div className={styles.deleteButton}>
-                  <Popconfirm
-                    title="确认删除"
-                    description={`确定要删除「${activeDict?.dictName ?? ''}」吗？`}
-                    okText="确定"
-                    cancelText="取消"
-                    onConfirm={handleDeleteDictType}
-                    disabled={!activeDict}
-                  >
-                    <Button danger icon={<DeleteOutlined />} disabled={!activeDict}>
-                      删除字典
+                <Auth permission={'system:dict:type:edit'}>
+                  <div className={styles.editButton}>
+                    <Button icon={<EditOutlined />} onClick={handleEditDictType}>
+                      编辑字典
                     </Button>
-                  </Popconfirm>
-                </div>
+                  </div>
+                </Auth>
+                <Auth permission={'system:dict:data:add'}>
+                  <div className={styles.addValueButton}>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAddDictData}>
+                      添加字典值
+                    </Button>
+                  </div>
+                </Auth>
+                <Auth permission={'system:dict:type:delete'}>
+                  <div className={styles.deleteButton}>
+                    <Popconfirm
+                      title="确认删除"
+                      description={`确定要删除「${activeDict?.dictName ?? ''}」吗？`}
+                      okText="确定"
+                      cancelText="取消"
+                      onConfirm={handleDeleteDictType}
+                      disabled={!activeDict}
+                    >
+                      <Button danger icon={<DeleteOutlined />} disabled={!activeDict}>
+                        删除字典
+                      </Button>
+                    </Popconfirm>
+                  </div>
+                </Auth>
               </div>
             </div>
 

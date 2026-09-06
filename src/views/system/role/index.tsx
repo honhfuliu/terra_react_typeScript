@@ -44,6 +44,7 @@ import {
 import { TableRowSelection } from 'antd/es/table/interface';
 import { useDict } from '@/hooks/useDict.ts';
 import DictTag from '@/components/DictTag';
+import Auth from '@/components/Auth';
 import { FilterOutlined } from '@ant-design/icons';
 
 const Role: React.FC = () => {
@@ -114,25 +115,29 @@ const Role: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          <Button
-            type="link"
-            size="small"
-            icon={<Update width={16} height={16} />}
-            onClick={() => getRoleByIdInfo(record.roleId)}
-          >
-            编辑
-          </Button>
-          <Popconfirm
-            title="确认删除"
-            description={`确定要删除「${record.roleName}」吗？`}
-            onConfirm={() => handleDelete(record.roleId)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" icon={<Delete width={16} height={16} />}>
-              删除
+          <Auth permission={'system:role:edit'}>
+            <Button
+              type="link"
+              size="small"
+              icon={<Update width={16} height={16} />}
+              onClick={() => getRoleByIdInfo(record.roleId)}
+            >
+              编辑
             </Button>
-          </Popconfirm>
+          </Auth>
+          <Auth permission={'system:role:delete'}>
+            <Popconfirm
+              title="确认删除"
+              description={`确定要删除「${record.roleName}」吗？`}
+              onConfirm={() => handleDelete(record.roleId)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
+                删除
+              </Button>
+            </Popconfirm>
+          </Auth>
         </Space>
       ),
     },
@@ -424,24 +429,28 @@ const Role: React.FC = () => {
             <span className={styles.cardSubtitle}>共 {pagination.total} 个角色</span>
           </div>
           <Space wrap>
-            <Button
-              className={styles.toolButton}
-              onClick={showModal}
-              icon={<Add width={16} height={16} />}
-            >
-              新增
-            </Button>
-            <Popconfirm
-              title="确认删除"
-              description={`确定要删除吗？`}
-              onConfirm={handleDeleteBatch}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button className={styles.toolButton} icon={<Delete width={16} height={16} />}>
-                删除
+            <Auth permission={'system:role:add'}>
+              <Button
+                className={styles.toolButton}
+                onClick={showModal}
+                icon={<Add width={16} height={16} />}
+              >
+                新增
               </Button>
-            </Popconfirm>
+            </Auth>
+            <Auth permission={'system:role:delete'}>
+              <Popconfirm
+                title="确认删除"
+                description={`确定要删除吗？`}
+                onConfirm={handleDeleteBatch}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button className={styles.toolButton} icon={<Delete width={16} height={16} />}>
+                  删除
+                </Button>
+              </Popconfirm>
+            </Auth>
             <Button className={styles.toolButton} icon={<Download width={16} height={16} />}>
               导出
             </Button>
