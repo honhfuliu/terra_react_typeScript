@@ -7,6 +7,8 @@ import Loading from '@/components/Loading';
 import storage from '@/utils/storage.ts';
 import { initPermission } from '@/permission';
 import { useNavigate } from 'react-router-dom';
+import { store } from '@/store';
+import { getHomePath } from '@/router/helper.ts';
 const Login: React.FC = () => {
   // 获取表单信息
   const [form] = Form.useForm<LoginFormType>();
@@ -37,7 +39,11 @@ const Login: React.FC = () => {
         };
         storage.set('$_user', JSON.stringify(userInfo));
         await initPermission();
-        navigate('/index');
+        // 根据后端返回的路由树，跳转到第一个可访问的页面
+        // 无权限的页面后端不会下发，因此不会出现登录后跳转到无权限页面的情况
+        const { routes } = store.getState().permission;
+        const homePath = getHomePath(routes);
+        navigate(homePath);
       }
     } catch (e) {
       console.error(e);

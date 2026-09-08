@@ -7,7 +7,7 @@ import { getHomePath } from '@/router/helper.ts';
 import { isLogin } from '@/utils/auth.ts';
 import styles from './index.module.less';
 
-const NotFound: React.FC = () => {
+const Forbidden: React.FC = () => {
   const navigate = useNavigate();
   const routes = useSelector((state: RootState) => state.permission.routes);
 
@@ -24,9 +24,9 @@ const NotFound: React.FC = () => {
     <div className={styles.container}>
       <Result
         className={styles.result}
-        status="404"
-        title="404"
-        subTitle="抱歉，您访问的页面不存在。"
+        status="403"
+        title="403"
+        subTitle="抱歉，您没有权限访问该页面。"
         extra={
           <Button type="primary" className={styles.homeButton} onClick={backHome}>
             返回首页
@@ -37,4 +37,4 @@ const NotFound: React.FC = () => {
   );
 };
 
-export default NotFound;
+export default Forbidden;

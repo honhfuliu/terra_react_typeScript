@@ -6,18 +6,20 @@ import * as React from 'react';
 import { MenuItem } from '@/store/modules/permission.ts';
 
 // 路由转换
-export function transformRoutes(route: AppRoute): AppRoute {
+// homePath: 根路由默认 index 重定向地址（登录后/刷新默认进入的第一个可访问页面）
+export function transformRoutes(route: AppRoute, homePath = '/403'): AppRoute {
   if (!route) {
-    return {};
+    return {} as AppRoute;
   }
-  const result: AppRoute = { ...route };
+  // AppRoute 是 RouteObject & {...} 交叉类型，直接对象展开后 TS 无法将其推断类型赋回交叉类型，需断言
+  const result = { ...route } as AppRoute;
 
   if (route.component) {
     result.component = loadComponent(route.component as string);
   }
   if (route.path === '/') {
     route.children?.unshift({
-      redirect: '/index',
+      redirect: homePath,
       index: true,
     });
   }

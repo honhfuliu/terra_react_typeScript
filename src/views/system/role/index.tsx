@@ -47,6 +47,73 @@ import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { FilterOutlined } from '@ant-design/icons';
 
+// 菜单树转换（Tree key = menuId）
+const convertMenuTree = (data: MenuNode[]): TreeDataNode[] => {
+  return data.map<TreeDataNode>((item) => ({
+    key: item.menuId,
+    title: item.menuName,
+    children: item.children ? convertMenuTree(item.children) : undefined,
+  }));
+};
+
+// 联动模式（checkStrictly=false）下受控 checkedKeys 只应包含“整棵子树都已被勾选”的节点。
+// 后端返回的 menuPermissions 可能带有“只授权了部分子节点”的父级 key（半选父级），
+// antd 联动会把该父级下的所有节点强制勾上，导致回显时全部选中。
+// 因此回显前剔除这类父级，让 UI 依据剩余勾选的子节点自动推导半选状态。
+const normalizeMenuKeys = (keys: React.Key[], treeData: TreeDataNode[]): React.Key[] => {
+  const keySet = new Set(keys ?? []);
+  if (!keySet.size || !treeData.length) {
+    return keys ?? [];
+  }
+  const halfCheckedParents = new Set<React.Key>();
+  const collectDescendants = (nodes: TreeDataNode[], descendants: Set<React.Key>) => {
+    for (const node of nodes) {
+      descendants.add(node.key);
+      if (node.children?.length) {
+        collectDescendants(node.children, descendants);
+      }
+    }
+  };
+  const walk = (nodes: TreeDataNode[]): void => {
+    for (const node of nodes) {
+      const children = node.children ?? [];
+      if (children.length && keySet.has(node.key)) {
+        const descendants = new Set<React.Key>();
+        collectDescendants(children, descendants);
+        // 该父级已被勾选但其后代仍有未被勾选的 → 属于半选父级，回显时交给 UI 自动推导
+        for (const key of descendants) {
+          if (!keySet.has(key)) {
+            halfCheckedParents.add(node.key);
+            break;
+          }
+        }
+      }
+      walk(children);
+    }
+  };
+  walk(treeData);
+  return (keys ?? []).filter((key) => !halfCheckedParents.has(key));
+};
+
+// 收集勾选节点的所有祖先 key（不含自身），用于回显时自动展开授权项所在分支
+const collectAncestorKeys = (treeData: TreeDataNode[], keys: React.Key[]): React.Key[] => {
+  const targetSet = new Set(keys ?? []);
+  const ancestors = new Set<React.Key>();
+  const walk = (nodes: TreeDataNode[], parents: React.Key[]): void => {
+    for (const node of nodes) {
+      const nextParents = [...parents, node.key];
+      if (targetSet.has(node.key)) {
+        parents.forEach((key) => ancestors.add(key));
+      }
+      if (node.children?.length) {
+        walk(node.children, nextParents);
+      }
+    }
+  };
+  walk(treeData, []);
+  return [...ancestors];
+};
+
 const Role: React.FC = () => {
   const statusOptions = useDict('sys_status'); // 状态
   const { message } = App.useApp();
@@ -152,13 +219,33 @@ const Role: React.FC = () => {
       console.error(e);
     }
   };
-  // 修改
+  // 打开权限弹窗：加载菜单树并重置权限相关状态；传入 keys 时为编辑回显
+  const openRoleModal = async (checkedKeysValue?: React.Key[]) => {
+    try {
+      const data = await menuOptions(false);
+      const tree = convertMenuTree(data);
+      setMenuTree(tree);
+      // 回显前做归一化：剔除半选父级 key，避免“父子联动”下整棵子树被全部勾选
+      const rawKeys = Array.isArray(checkedKeysValue) ? checkedKeysValue : [];
+      const keys = normalizeMenuKeys(rawKeys, tree);
+      setCheckedKeys(keys);
+      // 自动展开授权项所在分支，避免深层勾选被折叠而看不到
+      setExpandedKeys(collectAncestorKeys(tree, keys));
+      setAutoExpandParent(true);
+      setSelectedKeys([]);
+      setIsTreeExpanded(false);
+      setIsModalOpen(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // 修改：查询角色详情并回显
   const getRoleByIdInfo = async (id: number) => {
     try {
       const data = await getRoleById(id);
       roleForm.setFieldsValue(data);
-      setCheckedKeys(data.menuPermissions);
-      await showModal();
+      await openRoleModal(data.menuPermissions);
     } catch (e) {
       console.error(e);
     }
@@ -177,10 +264,8 @@ const Role: React.FC = () => {
       params.endTime = searchParams.createTime[1].format('YYYY-MM-DD HH:mm:ss');
       delete params.createTime;
     }
-    console.log(params);
     try {
       const data = await roleList(params);
-      console.log(data);
       setRoleDate(data.rows);
       setPagination((prev) => ({
         ...prev,
@@ -197,30 +282,12 @@ const Role: React.FC = () => {
   // 对话框
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const showModal = async () => {
-    try {
-      const data = await menuOptions(false);
-      const convertMenuTree = (data: MenuNode[]): TreeDataNode[] => {
-        return data.map((item) => ({
-          key: item.menuId,
-          title: item.menuName,
-          children: item.children ? convertMenuTree(item.children) : undefined,
-        }));
-      };
-      setMenuTree(convertMenuTree(data));
-      setIsModalOpen(true);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const handleOk = async () => {
     let value: RoleAddType;
     try {
       value = await roleForm.validateFields();
-      console.log(value);
     } catch (e) {
-      console.log('表单校验失败：', e);
+      console.error('表单校验失败：', e);
       return;
     }
     try {
@@ -239,9 +306,8 @@ const Role: React.FC = () => {
   };
   // 多行选择处理
   const rowSelection: TableRowSelection<RoleRow> = {
-    onChange: (selectedRowKeys, selectedRows) => {
+    onChange: (selectedRowKeys, _selectedRows) => {
       setSelectedRowKeys(selectedRowKeys);
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
     },
     getCheckboxProps: () => ({ disabled: false }),
   };
@@ -289,7 +355,6 @@ const Role: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('checkedKeys', checkedKeys);
     roleForm.setFieldValue('menuPermissions', checkedKeys);
   }, [checkedKeys]);
   // Tree 节点点击事件
@@ -432,7 +497,7 @@ const Role: React.FC = () => {
             <Auth permission={'system:role:add'}>
               <Button
                 className={styles.toolButton}
-                onClick={showModal}
+                onClick={() => openRoleModal()}
                 icon={<Add width={16} height={16} />}
               >
                 新增

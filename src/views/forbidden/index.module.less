@@ -1,0 +1,30 @@
+// 403 页面样式（支持亮色 / 暗色主题切换）
+// 使用 theme.less 中定义的 CSS 变量，主题切换时自动跟随变化
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-color);
+}
+
+.result {
+  // 覆盖 antd Result 默认背景，使其跟随主题
+  background: transparent;
+}
+
+// 返回首页按钮：软主色风格，与业务页工具栏按钮保持一致
+.homeButton {
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+  color: var(--btn-color);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--primary-color);
+    color: var(--btn-hover-color);
+  }
+}

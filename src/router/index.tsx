@@ -1,12 +1,21 @@
 import { AppRoute } from '@/types/route.ts';
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import Loading from '@/components/Loading';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { transformRoutes } from '@/router/transform.ts';
+import { getHomePath } from '@/router/helper.ts';
 import constantRoutes from '@/router/routes.tsx';
 import { isLogin } from '@/utils/auth.ts';
+import * as React from 'react';
+
+// 跳转到动态首页（后端返回的第一个可访问页面，无权限页面后端不会下发，避免写死跳转导致 403/404）
+const HomeNavigate: React.FC = () => {
+  const routes = useSelector((state: RootState) => state.permission.routes);
+  const homePath = useMemo(() => getHomePath(routes), [routes]);
+  return <Navigate to={homePath} replace />;
+};
 
 // 统一渲染组件
 const Element = (route: AppRoute) => {
@@ -14,9 +23,9 @@ const Element = (route: AppRoute) => {
   const token = isLogin();
   // login 页面放行
   if (path === '/login') {
-    // 已登录访问login，跳首页
+    // 已登录访问login，跳动态首页
     if (token) {
-      return <Navigate to="/index" replace />;
+      return <HomeNavigate />;
     }
     return Component ? <Component /> : null;
   }
@@ -57,7 +66,9 @@ const createRoute = (routers: AppRoute[]) => {
 
 const RouterView = () => {
   const routes = useSelector((state: RootState) => state.permission.routes);
-  const result = transformRoutes(structuredClone(routes));
+  // 动态首页：登录后/刷新根路径默认进入的第一个可访问页面
+  const homePath = useMemo(() => getHomePath(routes), [routes]);
+  const result = transformRoutes(structuredClone(routes), homePath);
   const routeList = [...[result], ...constantRoutes];
   return (
     <Suspense
