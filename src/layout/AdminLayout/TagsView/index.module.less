@@ -1,11 +1,127 @@
-.tags{
-  height:40px;
-  flex-shrink:0;
+// 标签栏（TagsView）样式（支持亮色 / 暗色主题切换）
+// 顶部页签下的快捷标签栏：首页（不可关闭）+ 各业务页面标签，支持右键操作提示
+.tags {
+  height: 50px;
+  flex-shrink: 0;
   display: flex;
-  justify-content: left;
   align-items: center;
-  padding: 5px;
+  gap: 12px;
+  padding: 0 16px;
   background: var(--tags-bg);
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
+  overflow: hidden;
+}
+
+// 标签列表区域
+.tagList {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+// 单个标签
+.tagItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--container-bg);
+  color: var(--text-color);
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+}
+
+// 选中态标签：浅青底 + 主色文字
+.tagItemActive {
+  background: #e6faf6;
+  border-color: #97e3d8;
+  color: #1677ff;
+
+  &:hover {
+    background: #e6faf6;
+    border-color: #97e3d8;
+    color: #1677ff;
+  }
+}
+
+// 标签图标
+.tagIcon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 16px;
+}
+
+// 标签标题
+.tagTitle {
+  line-height: 1;
+}
+
+// 关闭按钮
+.tagClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: var(--text-color-secondary);
+  font-size: 10px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: #ff4d4f;
+  }
+}
+
+// 右侧提示文案
+.tagHint {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+// 暗色主题适配
+:global([data-theme='dark']) {
+  .tagItemActive {
+    background: rgba(19, 194, 194, 0.14);
+    border-color: rgba(54, 207, 201, 0.4);
+    color: #69b1ff;
+
+    &:hover {
+      background: rgba(19, 194, 194, 0.14);
+      border-color: rgba(54, 207, 201, 0.4);
+      color: #69b1ff;
+    }
+  }
+
+  .tagClose:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ff7875;
+  }
+}
+
+@media (max-width: 768px) {
+  .tags {
+    padding: 0 12px;
+  }
+
+  .tagHint {
+    display: none;
+  }
 }

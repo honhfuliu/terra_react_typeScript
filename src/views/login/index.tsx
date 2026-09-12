@@ -2,21 +2,45 @@ import * as React from 'react';
 import styles from './index.module.less';
 import { Button, Checkbox, CheckboxProps, Form, Input } from 'antd';
 import Logo from '@/assets/images/logo.svg';
-import { login, LoginFormType } from '@/service/auto.ts';
+import { login, getCode, LoginFormType } from '@/service/auto.ts';
 import Loading from '@/components/Loading';
 import storage from '@/utils/storage.ts';
 import { initPermission } from '@/permission';
 import { useNavigate } from 'react-router-dom';
 import { store } from '@/store';
 import { getHomePath } from '@/router/helper.ts';
+import { useEffect, useState } from 'react';
+
 const Login: React.FC = () => {
   // 获取表单信息
   const [form] = Form.useForm<LoginFormType>();
+  // 图形验证码：base64 图片 + 唯一标识（登录时回传后端校验）
+  const [captchaImg, setCaptchaImg] = useState<string>('');
+  const [captchaUuid, setCaptchaUuid] = useState<string>('');
+  const [captchaEnabled, setCaptchaEnabled] = useState<boolean>(true);
+  const [captchaLoading, setCaptchaLoading] = useState<boolean>(false);
 
   const onChange: CheckboxProps['onChange'] = (e) => {
     console.log(`checked = ${e.target.checked}`);
   };
   const navigate = useNavigate();
+
+  // 获取图形验证码
+  const fetchCaptcha = async () => {
+    setCaptchaLoading(true);
+    const result = await getCode();
+    if (result) {
+      setCaptchaEnabled(result.enabled);
+      setCaptchaImg(result.img || '');
+      setCaptchaUuid(result.uuid || '');
+    }
+    setCaptchaLoading(false);
+  };
+
+  // 页面加载时获取验证码
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
 
   // 登录表单效验
   const handleLogin = async () => {
@@ -30,7 +54,7 @@ const Login: React.FC = () => {
       return;
     }
     try {
-      const result = await login(values);
+      const result = await login({ ...values, uuid: captchaUuid });
       if (result) {
         storage.set('$_token', result.token);
         const userInfo = {
@@ -44,9 +68,15 @@ const Login: React.FC = () => {
         const { routes } = store.getState().permission;
         const homePath = getHomePath(routes);
         navigate(homePath);
+      } else {
+        // 登录失败（含验证码错误）：清空验证码并刷新一张新的
+        form.setFieldValue('code', '');
+        fetchCaptcha();
       }
     } catch (e) {
       console.error(e);
+      form.setFieldValue('code', '');
+      fetchCaptcha();
     }
   };
   return (
@@ -74,7 +104,7 @@ const Login: React.FC = () => {
             <Form
               layout="vertical"
               form={form}
-              initialValues={{ username: 'admin', password: 'admin123', code: '1223' }}
+              initialValues={{ username: 'admin', password: 'admin123' }}
             >
               <Form.Item<LoginFormType>
                 label="账号"
@@ -90,21 +120,53 @@ const Login: React.FC = () => {
               >
                 <Input.Password placeholder={'请输入密码'} />
               </Form.Item>
-              <Form.Item<LoginFormType>
-                label="验证码"
-                name="code"
-                rules={[{ required: true, message: '验证码不能为空!' }]}
-              >
-                <div>
+              {/*
+                验证码字段（后端 enabled=false 时整块隐藏）：
+                外层 Form.Item（不带 name）负责 label 布局与错误提示渲染；
+                内层 noStyle Form.Item 负责字段绑定与校验，错误会自动上报到外层展示。
+              */}
+              {captchaEnabled && (
+                <Form.Item
+                  label="验证码"
+                  extra={
+                    <span className={styles.loginFormCaptchaRefresh}>点击验证码图片可刷新</span>
+                  }
+                >
                   <div className={styles.loginFormCode}>
-                    <div>
-                      <Input placeholder={'请输入验证码'} />
+                    <Form.Item<LoginFormType>
+                      name="code"
+                      noStyle
+                      rules={[{ required: true, message: '验证码不能为空!' }]}
+                    >
+                      <Input
+                        className={styles.codeInput}
+                        placeholder="请输入验证码"
+                        maxLength={4}
+                        autoComplete="off"
+                      />
+                    </Form.Item>
+                    <div
+                      className={styles.codeCaptcha}
+                      title="点击刷新验证码"
+                      onClick={fetchCaptcha}
+                    >
+                      {captchaImg ? (
+                        <img
+                          src={captchaImg}
+                          alt="验证码"
+                          className={`${styles.codeCaptchaImg} ${
+                            captchaLoading ? styles.codeCaptchaLoading : ''
+                          }`}
+                        />
+                      ) : (
+                        <span className={styles.codeCaptchaText}>
+                          {captchaLoading ? '加载中...' : '点击获取'}
+                        </span>
+                      )}
                     </div>
-                    <div>6798</div>
                   </div>
-                  <div className={styles.loginFormCaptchaRefresh}>点击验证码图片可刷新</div>
-                </div>
-              </Form.Item>
+                </Form.Item>
+              )}
             </Form>
           </div>
 

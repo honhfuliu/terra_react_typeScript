@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styles from './index.module.less';
 import avatarImage from '@/assets/images/avatar.png';
-import { Avatar, Breadcrumb, Button, Dropdown, Layout, MenuProps, Space, Grid } from 'antd';
+import { App, Avatar, Breadcrumb, Button, Dropdown, Layout, MenuProps, Space, Grid } from 'antd';
 import {
   BellOutlined,
   FullscreenOutlined,
@@ -13,8 +13,12 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { setTheme, toggleCollapsed } from '@/store/modules/layout.ts';
+import { clearPermission } from '@/store/modules/permission.ts';
 import { RootState } from '@/store';
+import { logout } from '@/service/auto.ts';
+import storage from '@/utils/storage.ts';
 import Search from '@/layout/AdminLayout/Header/Search';
 import GERENZHONGXIN from '@/assets/svgs/GERENZHONGXIN.svg?react';
 import Exit from '@/assets/svgs/Exit.svg?react';
@@ -22,11 +26,42 @@ import Exit from '@/assets/svgs/Exit.svg?react';
 const { Header: AntdHeader } = Layout;
 const Header: React.FC = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { modal, message } = App.useApp();
   const collapsed = useSelector((state: RootState) => state.layout.collapsed);
   const themeMode = useSelector((state: RootState) => state.layout.theme);
   // 切换主题
   const switchTheme = () => {
     dispatch(setTheme(themeMode === 'dark' ? 'light' : 'dark'));
+  };
+
+  // 退出登录
+  const handleLogout = () => {
+    modal.confirm({
+      title: '确认退出登录？',
+      content: '退出后需要重新登录才能继续使用系统。',
+      okText: '退出',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        // 调用后端退出接口（使当前会话失效），即使接口失败也清理本地登录态
+        await logout();
+        // 清除本地缓存中的 token 和用户信息
+        storage.remove('$_token');
+        storage.remove('$_user');
+        // 重置权限 / 动态路由数据，避免下个账号看到残留数据
+        dispatch(clearPermission());
+        message.success('已退出登录');
+        navigate('/login');
+      },
+    });
+  };
+
+  // 用户下拉菜单点击
+  const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (key === '5') {
+      handleLogout();
+    }
   };
 
   // 响应式处理
@@ -107,7 +142,7 @@ const Header: React.FC = () => {
             </div>
             <div>
               <Dropdown
-                menu={{ items: items }}
+                menu={{ items: items, onClick: handleUserMenuClick }}
                 trigger={['click']}
                 placement="bottomRight"
                 popupRender={(menu) => <div style={{ marginTop: 11 }}>{menu}</div>}

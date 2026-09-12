@@ -131,30 +131,69 @@
     }
   }
   .loginForm{
+    // 验证码行：输入框自适应占满 + 固定宽度验证码图片块
     .loginFormCode{
       display: flex;
-      > div:nth-child(1) {
-        width: 65%;
-        margin-right: 5px;
-      }
-      > div:nth-child(2) {
-        display: flex;
-        flex: 1;
-        background: #141414;
-        border-radius: 5px;
-        color: #FFFFFF;
-        justify-content: center;
-        align-items: center;
-        font-size: 16px;
-        letter-spacing: 5px;
+      align-items: center;
+      gap: 10px;
+    }
 
+    .codeInput{
+      flex: 1;
+      min-width: 0;
+    }
+
+    // 验证码图片块：高度与输入框保持一致（antd 默认控件高 32px）
+    .codeCaptcha{
+      flex-shrink: 0;
+      width: 108px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      background: #ffffff;
+      border: 1px solid #d9d9d9;
+      cursor: pointer;
+      user-select: none;
+      overflow: hidden;
+      transition: border-color 0.2s ease, opacity 0.2s ease;
+
+      &:hover {
+        border-color: #4096ff;
+        opacity: 0.9;
+      }
+
+      &:active {
+        opacity: 0.75;
       }
     }
+
+    // 后端返回的 base64 验证码图片填满整个块
+    .codeCaptchaImg{
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.2s ease;
+    }
+
+    // 刷新请求中的图片半透明
+    .codeCaptchaLoading{
+      opacity: 0.5;
+    }
+
+    // 图片未加载时的占位文案
+    .codeCaptchaText{
+      font-size: 12px;
+      color: rgb(148 163 184);
+      white-space: nowrap;
+    }
+
     .loginFormCaptchaRefresh{
       color: rgb(148 163 184);
       font-size: 12px;
       line-height: 16px;
-      margin-top: 8px;
     }
   }
   .loginAction{
