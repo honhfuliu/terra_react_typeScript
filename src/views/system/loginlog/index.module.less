@@ -1,0 +1,217 @@
+// 登录日志页面样式（支持亮色 / 暗色主题切换）
+// 颜色全部使用 theme.less 中定义的 CSS 变量，主题切换时自动跟随变化
+// 布局：双卡片结构 —— 上方「筛选条件」卡片 + 下方「登录记录」卡片
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// 卡片通用样式：搜索卡片 / 列表卡片
+.searchCard,
+.tableCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+}
+
+// 搜索卡片头部：图标 + 标题 + 副标题（同一行）
+.searchCardHeader {
+  padding: 16px 20px 0;
+}
+
+// 列表卡片头部：左侧标题块 + 右侧操作按钮
+.tableCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+// 标题行：图标 + 标题 + 副标题
+.titleWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.titleIcon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary-color);
+  font-size: 15px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.cardSubtitle {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+// 列表卡片标题：标题与副标题上下两行
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  .cardSubtitle {
+    margin-top: 2px;
+  }
+}
+
+// 搜索表单区域
+.searchCardBody {
+  padding: 14px 20px 20px;
+}
+
+// 搜索/重置按钮：与输入框底部对齐
+.searchActions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  height: 100%;
+}
+
+// 列表卡片主体
+.tableCardBody {
+  padding: 16px 20px 20px;
+}
+
+// 工具栏按钮统一样式：软主色风格（带蓝调），颜色取自全局 theme.less 的按钮变量
+.toolButton {
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+  color: var(--btn-color);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--primary-color);
+    color: var(--btn-hover-color);
+  }
+
+  // icon 跟随按钮文字颜色
+  svg {
+    fill: currentColor;
+  }
+}
+
+// 登录账号：加粗突出
+.accountName {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+// IP 地址胶囊标签
+.ipTag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: #e6f4ff;
+  color: #1677ff;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+// 状态徽章
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.statusSuccess {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.statusFail {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+// 操作信息：成功为次要文字色，失败为红色
+.msgSuccess {
+  color: var(--text-color-secondary);
+}
+
+.msgFail {
+  color: #ff4d4f;
+}
+
+// 登录时间：等宽不换行
+.timeCell {
+  white-space: nowrap;
+  color: var(--text-color);
+}
+
+// 暗色主题下的标签配色
+:global([data-theme='dark']) {
+  .ipTag {
+    background: rgba(22, 119, 255, 0.18);
+    color: #69b1ff;
+  }
+
+  .statusSuccess {
+    background: rgba(82, 196, 26, 0.16);
+    color: #73d13d;
+  }
+
+  .statusFail {
+    background: rgba(255, 77, 79, 0.16);
+    color: #ff7875;
+  }
+
+  .msgFail {
+    color: #ff7875;
+  }
+}
+
+@media (max-width: 575px) {
+  .layout {
+    gap: 12px;
+  }
+
+  .searchCard,
+  .tableCard {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .searchCardHeader {
+    padding: 14px 14px 0;
+  }
+
+  .searchCardBody {
+    padding: 12px 14px 16px;
+  }
+
+  .tableCardHeader {
+    padding: 14px 14px;
+  }
+
+  .tableCardBody {
+    padding: 12px 14px 16px;
+  }
+}

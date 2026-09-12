@@ -1,0 +1,438 @@
+// 操作日志页面样式（支持亮色 / 暗色主题切换）
+// 颜色全部使用 theme.less 中定义的 CSS 变量，主题切换时自动跟随变化
+// 布局：双卡片结构 —— 上方「筛选条件」卡片 + 下方「日志列表」卡片
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// 卡片通用样式：搜索卡片 / 列表卡片
+.searchCard,
+.tableCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+}
+
+// 搜索卡片头部：图标 + 标题 + 副标题（同一行）
+.searchCardHeader {
+  padding: 16px 20px 0;
+}
+
+// 列表卡片头部：左侧标题块 + 右侧操作按钮
+.tableCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+// 标题行：图标 + 标题 + 副标题
+.titleWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.titleIcon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary-color);
+  font-size: 15px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.cardSubtitle {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+// 列表卡片标题：标题与副标题上下两行
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  .cardSubtitle {
+    margin-top: 2px;
+  }
+}
+
+// 搜索表单区域
+.searchCardBody {
+  padding: 14px 20px 20px;
+}
+
+// 搜索/重置按钮：与输入框底部对齐
+.searchActions {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  height: 100%;
+}
+
+// 列表卡片主体
+.tableCardBody {
+  padding: 16px 20px 20px;
+}
+
+// 工具栏按钮统一样式：软主色风格（带蓝调）
+.toolButton {
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+  color: var(--btn-color);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--primary-color);
+    color: var(--btn-hover-color);
+  }
+
+  svg {
+    fill: currentColor;
+  }
+}
+
+// 危险操作按钮（批量删除 / 清空）：软红色风格
+.dangerButton {
+  background: #fff2f0;
+  border-color: #ffccc7;
+  color: #ff4d4f;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #ffeceb;
+    border-color: #ff4d4f;
+    color: #d9363e;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+
+  svg {
+    fill: currentColor;
+  }
+}
+
+// 头部提示文字
+.hintText {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+// 操作账号：加粗
+.accountName {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+// 操作对象：名称 + 类型
+.targetCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.targetName {
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.targetType {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
+
+// 请求信息：方法标签 + IP + 归属地
+.requestCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.requestLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.methodTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.methodGet {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.methodPost {
+  background: #e6fffb;
+  color: #13c2c2;
+}
+
+.methodPut {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
+.methodDelete {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+.requestIp {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.requestLocation {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
+
+// 状态徽章
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.statusSuccess {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.statusFail {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+// 耗时 / 创建时间
+.duration,
+.createTime {
+  white-space: nowrap;
+  color: var(--text-color);
+}
+
+// 操作列链接
+.actionLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  color: var(--primary-color);
+
+  svg {
+    fill: currentColor;
+  }
+}
+
+// ===== 详情弹窗 =====
+.modalBody {
+  margin-top: 8px;
+}
+
+// 顶部信息卡
+.detailCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 32px;
+  padding: 20px 24px;
+  border-radius: 10px;
+  background: #f7f9fa;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detailLabel {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+}
+
+.detailValue {
+  font-size: 15px;
+  color: var(--text-color);
+  word-break: break-all;
+}
+
+// 请求地址块
+.urlBlock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #e6fffb;
+  color: #08979c;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  word-break: break-all;
+
+  b {
+    font-weight: 700;
+  }
+}
+
+// 区块标题
+.sectionTitle {
+  margin: 20px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+// JSON 代码块
+.codeBlock {
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--search-bg);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-color);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+// 数据变更：操作前 / 操作后
+.dataChangeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dataChangeLabel {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+}
+
+// 暗色主题下的标签配色
+:global([data-theme='dark']) {
+  .dangerButton {
+    background: rgba(255, 77, 79, 0.16);
+    border-color: rgba(255, 77, 79, 0.35);
+    color: #ff7875;
+
+    &:hover {
+      background: rgba(255, 77, 79, 0.24);
+      border-color: #ff7875;
+      color: #ffa39e;
+    }
+  }
+
+  .methodGet {
+    background: rgba(82, 196, 26, 0.16);
+    color: #73d13d;
+  }
+
+  .methodPost {
+    background: rgba(19, 194, 194, 0.16);
+    color: #36cfc9;
+  }
+
+  .methodPut {
+    background: rgba(22, 119, 255, 0.18);
+    color: #69b1ff;
+  }
+
+  .methodDelete {
+    background: rgba(255, 77, 79, 0.16);
+    color: #ff7875;
+  }
+
+  .statusSuccess {
+    background: rgba(82, 196, 26, 0.16);
+    color: #73d13d;
+  }
+
+  .statusFail {
+    background: rgba(255, 77, 79, 0.16);
+    color: #ff7875;
+  }
+
+  .detailCard {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .urlBlock {
+    background: rgba(19, 194, 194, 0.16);
+    color: #36cfc9;
+  }
+}
+
+@media (max-width: 575px) {
+  .layout {
+    gap: 12px;
+  }
+
+  .searchCard,
+  .tableCard {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .searchCardHeader {
+    padding: 14px 14px 0;
+  }
+
+  .searchCardBody {
+    padding: 12px 14px 16px;
+  }
+
+  .tableCardHeader {
+    padding: 14px 14px;
+  }
+
+  .tableCardBody {
+    padding: 12px 14px 16px;
+  }
+
+  .detailCard,
+  .dataChangeGrid {
+    grid-template-columns: 1fr;
+  }
+}

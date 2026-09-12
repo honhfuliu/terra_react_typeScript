@@ -1,0 +1,345 @@
+// 公告管理页面样式（支持亮色 / 暗色主题切换）
+// 颜色全部使用 theme.less 中定义的 CSS 变量，主题切换时自动跟随变化
+// 布局：双卡片结构 —— 上方「筛选条件」卡片 + 下方「公告列表」卡片
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// 卡片通用样式：搜索卡片 / 列表卡片
+.searchCard,
+.tableCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+}
+
+// 搜索卡片头部：图标 + 标题 + 副标题（同一行）
+.searchCardHeader {
+  padding: 16px 20px 0;
+}
+
+// 列表卡片头部：左侧标题块 + 右侧操作按钮
+.tableCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+// 标题行：图标 + 标题 + 副标题
+.titleWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.titleIcon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary-color);
+  font-size: 15px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.cardSubtitle {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+// 列表卡片标题：标题与副标题上下两行
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  .cardSubtitle {
+    margin-top: 2px;
+  }
+}
+
+// 搜索表单区域
+.searchCardBody {
+  padding: 14px 20px 20px;
+}
+
+// 搜索/重置按钮：与输入框底部对齐
+.searchActions {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  height: 100%;
+}
+
+// 列表卡片主体
+.tableCardBody {
+  padding: 16px 20px 20px;
+}
+
+// 工具栏按钮统一样式：软主色风格（带蓝调），颜色取自全局 theme.less 的按钮变量
+.toolButton {
+  background: var(--btn-bg);
+  border-color: var(--btn-border);
+  color: var(--btn-color);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--primary-color);
+    color: var(--btn-hover-color);
+  }
+
+  // icon 跟随按钮文字颜色
+  svg {
+    fill: currentColor;
+  }
+}
+
+// ===== 公告标题列：标题 + 置顶徽章 + 摘要 =====
+.titleCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.titleLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.annTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.annSummary {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// 置顶徽章（橙色）
+.topTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: #fff7e6;
+  color: #fa8c16;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+// ===== 类型 / 状态 徽章通用 =====
+.typeTag,
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+// 类型：通知（蓝）
+.typeNotice {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
+// 类型：公告（青）
+.typeAnnounce {
+  background: #e6fffb;
+  color: #13c2c2;
+}
+
+// 状态：已发布（绿）
+.statusPublished {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+// 状态：待发布（蓝）
+.statusPending {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
+// 状态：草稿（灰）
+.statusDraft {
+  background: #f5f5f5;
+  color: #8c8c8c;
+}
+
+// 状态：已下线（橙）
+.statusOffline {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+// 空时间占位
+.emptyTime {
+  color: var(--text-color-secondary);
+}
+
+// 操作列链接
+.actionGroup {
+  white-space: nowrap;
+}
+
+.actionLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  color: var(--primary-color);
+
+  svg {
+    fill: currentColor;
+  }
+}
+
+// 弹窗主体
+.modalBody {
+  margin-top: 24px;
+}
+
+// 富文本占位区域（后续替换为富文本编辑器）
+.editorPlaceholder {
+  :global(.ant-input) {
+    min-height: 260px;
+  }
+}
+
+// 预览弹窗
+.previewBody {
+  .previewTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 12px;
+  }
+
+  .previewMeta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text-color-secondary);
+  }
+
+  .previewSummary {
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    background: var(--search-bg);
+    font-size: 13px;
+    color: var(--text-color-secondary);
+  }
+
+  .previewContent {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-color);
+    white-space: pre-wrap;
+  }
+}
+
+// 暗色主题下的标签配色
+:global([data-theme='dark']) {
+  .topTag {
+    background: rgba(250, 140, 22, 0.16);
+    color: #ffa940;
+  }
+
+  .typeNotice {
+    background: rgba(22, 119, 255, 0.18);
+    color: #69b1ff;
+  }
+
+  .typeAnnounce {
+    background: rgba(19, 194, 194, 0.16);
+    color: #36cfc9;
+  }
+
+  .statusPublished {
+    background: rgba(82, 196, 26, 0.16);
+    color: #73d13d;
+  }
+
+  .statusPending {
+    background: rgba(22, 119, 255, 0.18);
+    color: #69b1ff;
+  }
+
+  .statusDraft {
+    background: rgba(255, 255, 255, 0.08);
+    color: #a6a6a6;
+  }
+
+  .statusOffline {
+    background: rgba(250, 140, 22, 0.16);
+    color: #ffa940;
+  }
+}
+
+@media (max-width: 575px) {
+  .layout {
+    gap: 12px;
+  }
+
+  .searchCard,
+  .tableCard {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .searchCardHeader {
+    padding: 14px 14px 0;
+  }
+
+  .searchCardBody {
+    padding: 12px 14px 16px;
+  }
+
+  .tableCardHeader {
+    padding: 14px 14px;
+  }
+
+  .tableCardBody {
+    padding: 12px 14px 16px;
+  }
+
+  .modalBody {
+    margin-top: 18px;
+  }
+}
