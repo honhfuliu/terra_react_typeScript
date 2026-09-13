@@ -1,0 +1,53 @@
+// 富文本编辑器工具栏样式（支持亮色 / 暗色主题切换）
+.toolbar {
+  // 工具栏与正文区的层次色（比容器背景略深 / 略浅）
+  --rte-toolbar-bg: #fafafa;
+  --rte-toolbar-border: #f0f0f0;
+
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--rte-toolbar-border);
+  background: var(--rte-toolbar-bg);
+
+  :global {
+    // 按钮统一尺寸与圆角；带文字的按钮（段落 / 颜色）宽度自适应
+    .ant-btn {
+      height: 32px;
+      min-width: 32px;
+      padding: 0 8px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    // 分隔线收紧间距
+    .ant-divider-vertical {
+      margin: 0 2px;
+    }
+
+    // 颜色选择器触发器与其他按钮对齐
+    .ant-color-picker-trigger {
+      height: 32px;
+      min-width: 32px;
+      border-radius: 6px;
+    }
+  }
+}
+
+// 暗色主题：工具栏使用更深的层次色
+:global([data-theme='dark']) {
+  .toolbar {
+    --rte-toolbar-bg: #171717;
+    --rte-toolbar-border: #303030;
+  }
+}
+
+// 窄屏下工具栏保持紧凑换行，分隔线占满整行时不拉伸
+@media (max-width: 576px) {
+  .toolbar {
+    padding: 6px 8px;
+    gap: 2px;
+  }
+}

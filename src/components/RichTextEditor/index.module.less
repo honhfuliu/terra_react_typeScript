@@ -1,0 +1,167 @@
+// 富文本编辑器样式（支持亮色 / 暗色主题切换）
+// 颜色全部消费全局主题变量，data-theme='dark' 下自动切换，无需单独写暗色覆盖
+.editor {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--container-bg);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-color);
+  }
+
+  &:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.12);
+  }
+}
+
+.content {
+  min-height: 300px;
+  max-height: 560px;
+  padding: 16px 20px;
+  overflow-y: auto;
+  color: var(--text-color);
+  font-size: 14px;
+
+  :global {
+    .tiptap {
+      min-height: 260px;
+      outline: none;
+      color: var(--text-color);
+      // 输入光标使用主色
+      caret-color: var(--primary-color);
+
+      // 选中文字的底色
+      ::selection {
+        background: rgba(22, 119, 255, 0.2);
+      }
+
+      // 段落
+      p {
+        margin: 0 0 12px;
+        line-height: 1.75;
+      }
+
+      // 标题
+      h1 {
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.4;
+        margin: 20px 0 12px;
+        color: var(--text-color);
+      }
+
+      h2 {
+        font-size: 24px;
+        font-weight: 600;
+        line-height: 1.4;
+        margin: 18px 0 10px;
+        color: var(--text-color);
+      }
+
+      h3 {
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 1.5;
+        margin: 16px 0 8px;
+        color: var(--text-color);
+      }
+
+      // 无序列表
+      ul {
+        padding-left: 24px;
+        margin: 8px 0 12px;
+        list-style: disc;
+
+        li::marker {
+          color: var(--text-color-secondary);
+        }
+      }
+
+      // 有序列表
+      ol {
+        padding-left: 24px;
+        margin: 8px 0 12px;
+        list-style: decimal;
+
+        li::marker {
+          color: var(--text-color-secondary);
+        }
+      }
+
+      li {
+        margin: 4px 0;
+      }
+
+      // 引用
+      blockquote {
+        margin: 12px 0;
+        padding: 8px 16px;
+        border-left: 4px solid var(--primary-color);
+        border-radius: 0 6px 6px 0;
+        background: rgba(127, 127, 127, 0.08);
+        color: var(--text-color-secondary);
+      }
+
+      // 分割线
+      hr {
+        margin: 20px 0;
+        border: 0;
+        border-top: 1px solid var(--border-color);
+      }
+
+      // 链接
+      a {
+        color: var(--primary-color);
+        text-decoration: underline;
+        cursor: pointer;
+      }
+
+      // 行内代码
+      code {
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(127, 127, 127, 0.16);
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.9em;
+      }
+
+      // 代码块
+      pre {
+        margin: 12px 0;
+        padding: 14px 16px;
+        border-radius: 8px;
+        background: rgba(127, 127, 127, 0.1);
+        color: var(--text-color);
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        line-height: 1.6;
+        overflow-x: auto;
+
+        code {
+          padding: 0;
+          background: transparent;
+        }
+      }
+    }
+  }
+}
+
+// 暗色下微调：代码块使用更深的底色，与容器拉开层次
+:global([data-theme='dark']) {
+  .content {
+    :global {
+      .tiptap {
+        blockquote {
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        pre {
+          background: #121212;
+        }
+      }
+    }
+  }
+}
