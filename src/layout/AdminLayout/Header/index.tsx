@@ -72,6 +72,9 @@ const Header: React.FC = () => {
       key: '4',
       label: '个人设置',
       icon: <GERENZHONGXIN width={16} height={16} />,
+      onClick: () => {
+        navigate('/profile');
+      },
     },
     {
       key: '5',

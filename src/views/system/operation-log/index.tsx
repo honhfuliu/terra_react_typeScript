@@ -14,6 +14,7 @@ import {
   Grid,
   Input,
   Modal,
+  PaginationProps,
   Popconfirm,
   Row,
   Select,
@@ -21,248 +22,150 @@ import {
   Table,
   TableColumnsType,
 } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { FilterOutlined, EyeOutlined, ClearOutlined } from '@ant-design/icons';
 import {
-  FilterOutlined,
-  EyeOutlined,
-  ClearOutlined,
-  AuditOutlined,
-} from '@ant-design/icons';
-import dayjs, { Dayjs } from 'dayjs';
+  operationLogClear,
+  operationLogDelete,
+  operationLogList,
+  OperationLogRow,
+  OperationLogSearchType,
+} from '@/service/operationLog.ts';
+import { useDict } from '@/hooks/useDict.ts';
+import DictTag from '@/components/DictTag';
+import JsonViewer from '@/components/JsonViewer';
 
 const { RangePicker } = DatePicker;
 
-// 请求方法
-type MethodType = 'GET' | 'POST' | 'PUT' | 'DELETE';
+// 操作状态：1 成功 0 失败
+const STATUS_SUCCESS = 1;
+const STATUS_FAIL = 0;
 
-// 操作状态
-type LogStatus = 'success' | 'fail';
-
-// 操作日志记录
-interface OperationLogRecord {
-  id: number;
-  logId: number; // 日志 ID
-  account: string; // 操作账号
-  module: string; // 业务模块
-  action: string; // 操作类型
-  targetName: string; // 操作对象名称
-  targetType: string; // 操作对象类型
-  method: MethodType; // 请求方法
-  ip: string; // 请求 IP
-  location: string; // 归属地
-  status: LogStatus; // 操作状态
-  duration: number; // 耗时 ms
-  createTime: string; // 创建时间
-  operationTime: string; // 操作时间
-  browser: string; // 浏览器
-  os: string; // 操作系统
-  requestUrl: string; // 请求地址
-  requestParams: string; // 请求参数
-  beforeData: string; // 操作前数据
-  afterData: string; // 操作后数据
+// 筛选条件（表单字段，与服务端查询参数分离）
+interface LogSearchFormType {
+  username?: string; // 操作账号
+  module?: string; // 业务模块
+  operation?: string; // 操作类型
+  status?: number; // 操作状态
+  requestIp?: string; // 请求 IP
+  operationTime?: [import('dayjs').Dayjs, import('dayjs').Dayjs]; // 操作时间范围
 }
-
-// 筛选条件
-interface LogSearchType {
-  account?: string;
-  module?: string;
-  action?: string;
-  status?: LogStatus;
-  operationTime?: [Dayjs, Dayjs];
-  ip?: string;
-}
-
-// 业务模块选项
-const MODULE_OPTIONS = ['用户管理', '公告管理', '字典管理', '角色管理', '菜单管理'];
-
-// 操作类型选项
-const ACTION_OPTIONS = ['新增用户', '发布公告', '修改字典值', '删除角色', '更新菜单'];
-
-// 静态演示数据
-const MOCK_DATA: OperationLogRecord[] = [
-  {
-    id: 1,
-    logId: 10001,
-    account: 'admin',
-    module: '用户管理',
-    action: '新增用户',
-    targetName: 'test12',
-    targetType: '用户',
-    method: 'POST',
-    ip: '138.***.8888',
-    location: '北京市',
-    status: 'success',
-    duration: 86,
-    createTime: '2026-09-09 16:59:57',
-    operationTime: '2026-09-09 16:59:57',
-    browser: 'Chrome 128',
-    os: 'Windows 11',
-    requestUrl: '/api/system/user',
-    requestParams: '{"username":"test12","nickname":"测试用户"}',
-    beforeData: 'null',
-    afterData: '{"id":2,"username":"test12"}',
-  },
-  {
-    id: 2,
-    logId: 10002,
-    account: 'admin',
-    module: '公告管理',
-    action: '发布公告',
-    targetName: '系统维护通知',
-    targetType: '公告',
-    method: 'PUT',
-    ip: '138.***.8888',
-    location: '北京市',
-    status: 'success',
-    duration: 142,
-    createTime: '2026-09-09 15:42:10',
-    operationTime: '2026-09-09 15:42:10',
-    browser: 'Chrome 128',
-    os: 'Windows 11',
-    requestUrl: '/api/system/announcement/publish',
-    requestParams: '{"id":8,"title":"系统维护通知"}',
-    beforeData: '{"id":8,"status":"draft"}',
-    afterData: '{"id":8,"status":"published"}',
-  },
-  {
-    id: 3,
-    logId: 10003,
-    account: 'test12',
-    module: '字典管理',
-    action: '修改字典值',
-    targetName: '用户状态 / 启用',
-    targetType: '字典值',
-    method: 'PUT',
-    ip: '111.***.2233',
-    location: '上海市',
-    status: 'fail',
-    duration: 58,
-    createTime: '2026-09-09 14:08:33',
-    operationTime: '2026-09-09 14:08:33',
-    browser: 'Edge 127',
-    os: 'Windows 10',
-    requestUrl: '/api/system/dict/data',
-    requestParams: '{"dictCode":21,"dictValue":"启用"}',
-    beforeData: '{"dictCode":21,"status":"disabled"}',
-    afterData: '{"dictCode":21,"status":"enabled"}',
-  },
-  {
-    id: 4,
-    logId: 10004,
-    account: 'operator',
-    module: '角色管理',
-    action: '删除角色',
-    targetName: '访客角色',
-    targetType: '角色',
-    method: 'DELETE',
-    ip: '120.***.1010',
-    location: '杭州市',
-    status: 'success',
-    duration: 73,
-    createTime: '2026-09-09 11:26:45',
-    operationTime: '2026-09-09 11:26:45',
-    browser: 'Firefox 128',
-    os: 'Ubuntu 22.04',
-    requestUrl: '/api/system/role/6',
-    requestParams: '{"roleId":6}',
-    beforeData: '{"roleId":6,"roleName":"访客角色"}',
-    afterData: 'null',
-  },
-  {
-    id: 5,
-    logId: 10005,
-    account: 'admin',
-    module: '菜单管理',
-    action: '更新菜单',
-    targetName: '操作日志',
-    targetType: '菜单',
-    method: 'PUT',
-    ip: '138.***.8888',
-    location: '北京市',
-    status: 'success',
-    duration: 115,
-    createTime: '2026-09-09 09:12:03',
-    operationTime: '2026-09-09 09:12:03',
-    browser: 'Chrome 128',
-    os: 'Windows 11',
-    requestUrl: '/api/system/menu/15',
-    requestParams: '{"menuId":15,"menuName":"操作日志"}',
-    beforeData: '{"menuId":15,"menuName":"日志"}',
-    afterData: '{"menuId":15,"menuName":"操作日志"}',
-  },
-];
 
 const OperationLog: React.FC = () => {
+  const operateTypeOptions = useDict('sys_operate_type');
+  const operateModuleOptions = useDict('sys_operate_module');
+  const resultStatusOptions = useDict('sys_result_status');
+
+  const avatar = 'https://i.imgur.com/MK3eW3As.jpg';
+  const longArray = new Array(1000).fill(1);
+  const example = {
+    avatar,
+    string: 'Lorem ipsum dolor sit amet',
+    integer: 42,
+    float: 114.514,
+    bigint: 10086n,
+    null: null,
+    undefined,
+    timer: 0,
+    date: new Date('Tue Sep 13 2022 14:07:44 GMT-0500 (Central Daylight Time)'),
+    array: [19, 100.86, 'test', NaN, Infinity],
+    nestedArray: [
+      [1, 2],
+      [3, 4],
+    ],
+    object: {
+      'first-child': true,
+      'second-child': false,
+      'last-child': null,
+    },
+    longArray,
+    string_number: '1234',
+  };
+
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
-  const [searchForm] = Form.useForm<LogSearchType>();
-  const [dataList, setDataList] = useState<OperationLogRecord[]>(MOCK_DATA);
+  const [searchForm] = Form.useForm<LogSearchFormType>();
+
+  // 表格数据
+  const [dataList, setDataList] = useState<OperationLogRow[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  // 清空操作 loading
+  const [clearing, setClearing] = useState<boolean>(false);
+  // 表格多选
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  // 批量删除 loading
+  const [deleting, setDeleting] = useState<boolean>(false);
+  // 服务端分页
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   // 详情弹窗
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detailRecord, setDetailRecord] = useState<OperationLogRecord | null>(null);
+  const [detailRecord, setDetailRecord] = useState<OperationLogRow | null>(null);
 
-  // 搜索（静态页面：在本地演示数据上筛选）
-  const handleSearch = () => {
-    const values = searchForm.getFieldsValue();
-    let result = [...MOCK_DATA];
+  // 查询操作日志列表
+  const fetchList = async (pageNum: number, pageSize: number) => {
+    const searchValues = searchForm.getFieldsValue();
+    const params: OperationLogSearchType = {
+      username: searchValues.username,
+      module: searchValues.module,
+      operation: searchValues.operation,
+      status: searchValues.status,
+      requestIp: searchValues.requestIp,
+      pageNum,
+      pageSize,
+    };
 
-    const account = values.account?.trim();
-    if (account) {
-      result = result.filter((item) =>
-        item.account.toLowerCase().includes(account.toLowerCase()),
-      );
+    // 操作时间范围转换为后端需要的 startTime / endTime 字符串
+    if (searchValues.operationTime && searchValues.operationTime.length === 2) {
+      const [start, end] = searchValues.operationTime;
+      params.startTime = start.format('YYYY-MM-DD HH:mm:ss');
+      params.endTime = end.format('YYYY-MM-DD HH:mm:ss');
     }
 
-    if (values.module) {
-      result = result.filter((item) => item.module === values.module);
+    setLoading(true);
+    try {
+      const data = await operationLogList(params);
+      setDataList(data.rows || []);
+      // 数据刷新后清空多选，避免残留失效的选中项
+      setSelectedRowKeys([]);
+      setPagination((prev) => ({
+        ...prev,
+        current: pageNum,
+        pageSize,
+        total: data.total || 0,
+      }));
+    } catch (e) {
+      console.error(e);
+      setDataList([]);
+      setPagination((prev) => ({ ...prev, current: pageNum, pageSize, total: 0 }));
+    } finally {
+      setLoading(false);
     }
-
-    if (values.action) {
-      result = result.filter((item) => item.action === values.action);
-    }
-
-    if (values.status) {
-      result = result.filter((item) => item.status === values.status);
-    }
-
-    const ip = values.ip?.trim();
-    if (ip) {
-      result = result.filter((item) => item.ip.includes(ip));
-    }
-
-    if (values.operationTime && values.operationTime.length === 2) {
-      const [start, end] = values.operationTime;
-      result = result.filter((item) => {
-        const time = dayjs(item.operationTime);
-        return time.isAfter(start.startOf('day')) && time.isBefore(end.endOf('day'));
-      });
-    }
-
-    setDataList(result);
-    setSelectedRowKeys([]);
   };
 
-  // 重置
+  // 首次加载
+  useEffect(() => {
+    void fetchList(1, 10);
+  }, []);
+
+  // 搜索：回到第一页
+  const handleSearch = () => {
+    void fetchList(1, pagination.pageSize);
+  };
+
+  // 重置：清空筛选条件并重新查询
   const handleResetSearch = () => {
     searchForm.resetFields();
-    setDataList(MOCK_DATA);
-    setSelectedRowKeys([]);
+    void fetchList(1, pagination.pageSize);
   };
 
-  // 批量删除
-  const handleBatchDelete = () => {
-    setDataList((prev) => prev.filter((item) => !selectedRowKeys.includes(item.id)));
-    message.success(`已删除 ${selectedRowKeys.length} 条日志`);
-    setSelectedRowKeys([]);
-  };
-
-  // 清空
-  const handleClearAll = () => {
-    setDataList([]);
-    setSelectedRowKeys([]);
-    message.success('日志已清空');
+  // 翻页
+  const handlePageChange: PaginationProps['onChange'] = (page, pageSize) => {
+    void fetchList(page, pageSize);
   };
 
   // 导出
@@ -270,40 +173,97 @@ const OperationLog: React.FC = () => {
     message.success('导出成功');
   };
 
+  // 清空操作日志
+  const handleClearAll = async () => {
+    setClearing(true);
+    try {
+      await operationLogClear();
+      message.success('日志已清空');
+      // 清空后回到第一页重新拉取，保证分页状态与数据一致
+      void fetchList(1, pagination.pageSize);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  // 批量删除选中的操作日志
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先勾选要删除的日志');
+      return;
+    }
+    setDeleting(true);
+    try {
+      await operationLogDelete(selectedRowKeys);
+      message.success(`成功删除 ${selectedRowKeys.length} 条日志`);
+      void fetchList(pagination.current, pagination.pageSize);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // 查看详情
-  const handleDetail = (record: OperationLogRecord) => {
+  const handleDetail = (record: OperationLogRow) => {
     setDetailRecord(record);
     setDetailOpen(true);
   };
 
+  // 格式化操作前后数据（JSON 字符串美化展示，非 JSON 时原样展示，空值显示 -）
+  const parseNestedJson = (value: unknown): unknown => {
+    // 字符串：尝试解析 JSON
+    if (typeof value === 'string') {
+      try {
+        return parseNestedJson(JSON.parse(value));
+      } catch {
+        return value;
+      }
+    }
+    // 数组：递归处理每一项
+    if (Array.isArray(value)) {
+      return value.map((item) => parseNestedJson(item));
+    }
+    // 对象：递归处理每个属性
+    if (value !== null && typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, val]) => [key, parseNestedJson(val)]),
+      );
+    }
+    // number / boolean / null
+    return value;
+  };
+
+  // 状态标签
+  const renderStatusTag = (status: number) => (
+    <span
+      className={`${styles.statusTag} ${
+        status === STATUS_SUCCESS ? styles.statusSuccess : styles.statusFail
+      }`}
+    >
+      {status === STATUS_SUCCESS ? '成功' : '失败'}
+    </span>
+  );
+
   // 请求方法标签样式
-  const methodClassName = (method: MethodType) => {
-    const map: Record<MethodType, string> = {
+  const methodClassName = (method: string) => {
+    const map: Record<string, string> = {
       GET: styles.methodGet,
       POST: styles.methodPost,
       PUT: styles.methodPut,
       DELETE: styles.methodDelete,
     };
-    return `${styles.methodTag} ${map[method]}`;
+    return `${styles.methodTag} ${map[method] || styles.methodGet}`;
   };
 
-  // 状态标签
-  const renderStatusTag = (status: LogStatus) => (
-    <span
-      className={`${styles.statusTag} ${
-        status === 'success' ? styles.statusSuccess : styles.statusFail
-      }`}
-    >
-      {status === 'success' ? '成功' : '失败'}
-    </span>
-  );
-
   // 表格列配置
-  const columns: TableColumnsType<OperationLogRecord> = [
+  const columns: TableColumnsType<OperationLogRow> = [
     {
       title: '操作账号',
-      dataIndex: 'account',
-      key: 'account',
+      dataIndex: 'username',
+      key: 'username',
       width: 110,
       render: (text: string) => <span className={styles.accountName}>{text}</span>,
     },
@@ -312,24 +272,28 @@ const OperationLog: React.FC = () => {
       dataIndex: 'module',
       key: 'module',
       width: 110,
+      render: (module: string) => DictTag({ value: module, option: operateModuleOptions }),
     },
     {
       title: '操作类型',
-      dataIndex: 'action',
-      key: 'action',
+      dataIndex: 'operation',
+      key: 'operation',
       width: 110,
+      render: (operation: string) => DictTag({ value: operation, option: operateTypeOptions }),
     },
-    {
-      title: '操作对象',
-      key: 'target',
-      width: 160,
-      render: (_, record) => (
-        <div className={styles.targetCell}>
-          <span className={styles.targetName}>{record.targetName}</span>
-          <span className={styles.targetType}>{record.targetType}</span>
-        </div>
-      ),
-    },
+    // {
+    //   title: '操作对象',
+    //   key: 'target',
+    //   width: 160,
+    //   render: (_, record) => (
+    //     <div className={styles.targetCell}>
+    //       <span className={styles.targetName}>{record.targetName || '-'}</span>
+    //       {record.targetType && (
+    //         <span className={styles.targetType}>{record.targetType}</span>
+    //       )}
+    //     </div>
+    //   ),
+    // },
     {
       title: '请求信息',
       key: 'request',
@@ -337,10 +301,10 @@ const OperationLog: React.FC = () => {
       render: (_, record) => (
         <div className={styles.requestCell}>
           <div className={styles.requestLine}>
-            <span className={methodClassName(record.method)}>{record.method}</span>
-            <span className={styles.requestIp}>{record.ip}</span>
+            <span className={methodClassName(record.requestMethod)}>{record.requestMethod}</span>
+            <span className={styles.requestIp}>{record.requestIp || '-'}</span>
           </div>
-          <span className={styles.requestLocation}>{record.location}</span>
+          <span className={styles.requestLocation}>{record.requestLocation || '-'}</span>
         </div>
       ),
     },
@@ -349,12 +313,12 @@ const OperationLog: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 90,
-      render: (status: LogStatus) => renderStatusTag(status),
+      render: (status: string) => DictTag({ value: status, option: resultStatusOptions }),
     },
     {
       title: '耗时',
-      dataIndex: 'duration',
-      key: 'duration',
+      dataIndex: 'costTime',
+      key: 'costTime',
       width: 90,
       render: (value: number) => <span className={styles.duration}>{value} ms</span>,
     },
@@ -401,34 +365,48 @@ const OperationLog: React.FC = () => {
           <Form form={searchForm}>
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12} lg={8} xl={4}>
-                <Form.Item<LogSearchType>
+                <Form.Item<LogSearchFormType>
                   label={'操作账号'}
-                  name="account"
+                  name="username"
                   style={{ marginBottom: 0 }}
                 >
                   <Input placeholder={'请输入操作账号'} allowClear />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} lg={8} xl={5}>
-                <Form.Item<LogSearchType> label={'业务模块'} name="module" style={{ marginBottom: 0 }}>
+                <Form.Item<LogSearchFormType>
+                  label={'业务模块'}
+                  name="module"
+                  style={{ marginBottom: 0 }}
+                >
                   <Select
                     placeholder={'全部模块'}
                     allowClear
-                    options={MODULE_OPTIONS.map((item) => ({ label: item, value: item }))}
+                    options={operateModuleOptions.map((item) => ({
+                      label: item.dictLabel,
+                      value: item.dictValue,
+                    }))}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} lg={8} xl={5}>
-                <Form.Item<LogSearchType> label={'操作类型'} name="action" style={{ marginBottom: 0 }}>
+                <Form.Item<LogSearchFormType>
+                  label={'操作类型'}
+                  name="operation"
+                  style={{ marginBottom: 0 }}
+                >
                   <Select
                     placeholder={'全部操作'}
                     allowClear
-                    options={ACTION_OPTIONS.map((item) => ({ label: item, value: item }))}
+                    options={operateTypeOptions.map((item) => ({
+                      label: item.dictLabel,
+                      value: item.dictValue,
+                    }))}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} lg={8} xl={4}>
-                <Form.Item<LogSearchType>
+                <Form.Item<LogSearchFormType>
                   label={'操作状态'}
                   name="status"
                   style={{ marginBottom: 0 }}
@@ -436,25 +414,29 @@ const OperationLog: React.FC = () => {
                   <Select
                     placeholder={'全部状态'}
                     allowClear
-                    options={[
-                      { label: '成功', value: 'success' },
-                      { label: '失败', value: 'fail' },
-                    ]}
+                    options={resultStatusOptions.map((item) => ({
+                      label: item.dictLabel,
+                      value: item.dictValue,
+                    }))}
                   />
                 </Form.Item>
               </Col>
+              <Col xs={24} sm={12} lg={8} xl={4}>
+                <Form.Item<LogSearchFormType>
+                  label={'请求 IP'}
+                  name="requestIp"
+                  style={{ marginBottom: 0 }}
+                >
+                  <Input placeholder={'请输入 IP 地址'} allowClear />
+                </Form.Item>
+              </Col>
               <Col xs={24} sm={24} lg={12} xl={6}>
-                <Form.Item<LogSearchType>
+                <Form.Item<LogSearchFormType>
                   label={'操作时间'}
                   name="operationTime"
                   style={{ marginBottom: 0 }}
                 >
-                  <RangePicker style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={12} lg={8} xl={4}>
-                <Form.Item<LogSearchType> label={'请求 IP'} name="ip" style={{ marginBottom: 0 }}>
-                  <Input placeholder={'请输入 IP 地址'} allowClear />
+                  <RangePicker showTime style={{ width: '100%' }} />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} lg={8} xl={5}>
@@ -481,27 +463,24 @@ const OperationLog: React.FC = () => {
         <div className={styles.tableCardHeader}>
           <div className={styles.titleBlock}>
             <span className={styles.cardTitle}>日志列表</span>
-            <span className={styles.cardSubtitle}>共 {dataList.length} 条操作记录</span>
+            <span className={styles.cardSubtitle}>共 {pagination.total} 条操作记录</span>
           </div>
           <Space wrap>
-            <span className={styles.hintText}>
-              <AuditOutlined />
-              仅保留必要审计字段
-            </span>
             <Popconfirm
               title="确认批量删除"
-              description={`确定要删除选中的 ${selectedRowKeys.length} 条日志吗？`}
+              description={`将删除选中的 ${selectedRowKeys.length} 条操作日志，确定继续吗？`}
               onConfirm={handleBatchDelete}
               okText="确定"
               cancelText="取消"
-              disabled={selectedRowKeys.length === 0}
+              okButtonProps={{ loading: deleting, danger: true }}
             >
               <Button
                 className={styles.dangerButton}
                 icon={<Delete width={16} height={16} />}
                 disabled={selectedRowKeys.length === 0}
+                loading={deleting}
               >
-                批量删除
+                批量删除{selectedRowKeys.length > 0 && ` (${selectedRowKeys.length})`}
               </Button>
             </Popconfirm>
             <Popconfirm
@@ -510,8 +489,9 @@ const OperationLog: React.FC = () => {
               onConfirm={handleClearAll}
               okText="确定"
               cancelText="取消"
+              okButtonProps={{ loading: clearing, danger: true }}
             >
-              <Button className={styles.dangerButton} icon={<ClearOutlined />}>
+              <Button className={styles.dangerButton} icon={<ClearOutlined />} loading={clearing}>
                 清空
               </Button>
             </Popconfirm>
@@ -526,18 +506,24 @@ const OperationLog: React.FC = () => {
         </div>
         <div className={styles.tableCardBody}>
           <Table
-            rowSelection={{
-              selectedRowKeys,
-              onChange: (keys) => setSelectedRowKeys(keys),
-            }}
             columns={columns}
             dataSource={dataList}
             rowKey="id"
+            loading={loading}
+            rowSelection={{
+              selectedRowKeys,
+              onChange: (keys) => setSelectedRowKeys(keys),
+              // 翻页/筛选时清空选择，与服务端分页保持一致
+              preserveSelectedRowKeys: false,
+            }}
             scroll={{ x: 1260 }}
             pagination={{
-              pageSize: 10,
-              showSizeChanger: false,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              showSizeChanger: true,
               showTotal: (total) => `共 ${total} 条`,
+              onChange: handlePageChange,
             }}
           />
         </div>
@@ -561,55 +547,107 @@ const OperationLog: React.FC = () => {
             <div className={styles.detailCard}>
               <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>日志 ID</span>
-                <span className={styles.detailValue}>{detailRecord.logId}</span>
+                <span className={styles.detailValue}>{detailRecord.id}</span>
               </div>
               <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>操作时间</span>
-                <span className={styles.detailValue}>{detailRecord.operationTime}</span>
+                <span className={styles.detailLabel}>创建时间</span>
+                <span className={styles.detailValue}>{detailRecord.createTime}</span>
               </div>
               <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>操作账号 / IP</span>
                 <span className={styles.detailValue}>
-                  {detailRecord.account} · {detailRecord.ip}
+                  {detailRecord.username} · {detailRecord.requestIp}
                 </span>
               </div>
               <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>浏览器 / 操作系统</span>
+                <span className={styles.detailLabel}>业务模块 / 操作类型</span>
                 <span className={styles.detailValue}>
-                  {detailRecord.browser} · {detailRecord.os}
+                  <DictTag value={detailRecord.module} option={operateModuleOptions} /> {''}
+                  <DictTag value={detailRecord.operation} option={operateTypeOptions} />
                 </span>
               </div>
               <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>请求地址</span>
+                <span className={styles.detailLabel}>请求方法</span>
                 <span className={styles.urlBlock}>
-                  <b>{detailRecord.method}</b>
-                  {detailRecord.requestUrl}
+                  <b>{detailRecord.requestMethod}</b>
                 </span>
+              </div>
+              <div className={styles.detailItem} style={{ gridColumn: '1 / -1' }}>
+                <span className={styles.detailLabel}>请求地址</span>
+                <span className={styles.codeBlock}>{detailRecord.requestUrl || '-'}</span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>操作对象</span>
+                <span className={styles.detailValue}>
+                  {detailRecord.targetName || '-'}
+                  {detailRecord.targetType && ` (${detailRecord.targetType})`}
+                </span>
+              </div>
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>请求归属地</span>
+                <span className={styles.detailValue}>{detailRecord.requestLocation || '-'}</span>
               </div>
               <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>操作结果</span>
+                {/*<span className={styles.detailValue}>*/}
+                {/*  {renderStatusTag(detailRecord.status)} {detailRecord.costTime} ms*/}
+                {/*</span>*/}
                 <span className={styles.detailValue}>
-                  {renderStatusTag(detailRecord.status)} {detailRecord.duration} ms
+                  {DictTag({
+                    value: detailRecord.status,
+                    option: resultStatusOptions,
+                  })}{' '}
+                  {detailRecord.costTime} ms
                 </span>
               </div>
             </div>
 
             {/* 请求参数 */}
-            <div className={styles.sectionTitle}>请求参数</div>
-            <div className={styles.codeBlock}>{detailRecord.requestParams}</div>
+            {detailRecord.requestParams && (
+              <>
+                <div className={styles.sectionTitle}>请求参数</div>
+                <JsonViewer value={parseNestedJson(detailRecord.requestParams)} />
+              </>
+            )}
 
-            {/* 数据变更 */}
-            <div className={styles.sectionTitle}>数据变更</div>
-            <div className={styles.dataChangeGrid}>
-              <div>
-                <div className={styles.dataChangeLabel}>操作前</div>
-                <div className={styles.codeBlock}>{detailRecord.beforeData}</div>
-              </div>
-              <div>
-                <div className={styles.dataChangeLabel}>操作后</div>
-                <div className={styles.codeBlock}>{detailRecord.afterData}</div>
-              </div>
-            </div>
+            {/* 数据变更：操作前 / 操作后 */}
+            {(detailRecord.beforeData || detailRecord.afterData || detailRecord.targetId) && (
+              <>
+                <div className={styles.sectionTitle}>
+                  数据变更
+                  {detailRecord.targetId && (
+                    <span
+                      style={{
+                        marginLeft: 10,
+                        fontSize: 13,
+                        fontWeight: 400,
+                        color: 'var(--text-color-secondary)',
+                      }}
+                    >
+                      对象 ID：{detailRecord.targetId}
+                    </span>
+                  )}
+                </div>
+                <div className={styles.dataChangeGrid}>
+                  <div>
+                    <div className={styles.dataChangeLabel}>操作前</div>
+                    <JsonViewer value={parseNestedJson(detailRecord.beforeData)} />
+                  </div>
+                  <div>
+                    <div className={styles.dataChangeLabel}>操作后</div>
+                    <JsonViewer value={parseNestedJson(detailRecord.afterData)} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 错误信息 */}
+            {detailRecord.errorMessage && (
+              <>
+                <div className={styles.sectionTitle}>错误信息</div>
+                <div className={styles.codeBlock}>{detailRecord.errorMessage}</div>
+              </>
+            )}
           </div>
         )}
       </Modal>

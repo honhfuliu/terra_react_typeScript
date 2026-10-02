@@ -8,6 +8,11 @@ const routers: AppRoute[] = [
     component: lazy(() => import('@/views/login')),
   },
   {
+    path: '/profile',
+    name: 'PROFILE',
+    component: lazy(() => import('@/views/profile')),
+  },
+  {
     path: '/403',
     name: '403',
     component: lazy(() => import('@/views/forbidden')),
