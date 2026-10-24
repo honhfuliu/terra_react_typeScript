@@ -1,17 +1,53 @@
 import * as React from 'react';
 import styles from './index.module.less';
 import { Grid, Input, Modal, Divider } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  DashboardOutlined,
+  UserOutlined,
+  TeamOutlined,
+  SettingOutlined,
+  FileTextOutlined,
+  ProfileOutlined,
+  MonitorOutlined,
+  LogoutOutlined,
+  SafetyCertificateOutlined,
+  BellOutlined,
+  ApartmentOutlined,
+  OrderedListOutlined,
+} from '@ant-design/icons';
 import { useState } from 'react';
-import Enter from '@/assets/svgs/Enter.svg?react';
-import Up from '@/assets/svgs/Up.svg?react';
-import Down from '@/assets/svgs/Down.svg?react';
-import ESC from '@/assets/svgs/ESC.svg?react';
+
+// 静态菜单数据（后续接入真实菜单数据）
+interface MenuItem {
+  id: number;
+  name: string;
+  path: string;
+  icon: React.ReactNode;
+}
+
+const staticMenus: MenuItem[] = [
+  { id: 1, name: '仪表盘', path: '/dashboard', icon: <DashboardOutlined /> },
+  { id: 2, name: '用户管理', path: '/system/user', icon: <UserOutlined /> },
+  { id: 3, name: '角色管理', path: '/system/role', icon: <TeamOutlined /> },
+  { id: 4, name: '菜单管理', path: '/system/menu', icon: <OrderedListOutlined /> },
+  { id: 5, name: '部门管理', path: '/system/dept', icon: <ApartmentOutlined /> },
+  { id: 6, name: '字典管理', path: '/system/dict', icon: <FileTextOutlined /> },
+  { id: 7, name: '通知公告', path: '/system/announcement', icon: <BellOutlined /> },
+  { id: 8, name: '操作日志', path: '/system/operation-log', icon: <ProfileOutlined /> },
+  { id: 9, name: '登录日志', path: '/system/loginlog', icon: <LogoutOutlined /> },
+  { id: 10, name: '在线用户', path: '/monitor/online', icon: <MonitorOutlined /> },
+  { id: 11, name: '参数设置', path: '/system/config', icon: <SettingOutlined /> },
+  { id: 12, name: '安全中心', path: '/profile', icon: <SafetyCertificateOutlined /> },
+];
+
 const Search: React.FC = () => {
   // 响应式处理
   const screens = Grid.useBreakpoint();
   // 对话框控制
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // 当前选中的菜单项索引
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const handleOk = () => {
     setIsModalOpen(false);
@@ -69,33 +105,23 @@ const Search: React.FC = () => {
               <Divider />
             </div>
             <div className={styles.modal_body}>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
-              <p>Some contents...</p>
+              {staticMenus.length === 0 ? (
+                <div className={styles.empty_text}>暂无匹配的菜单</div>
+              ) : (
+                <ul className={styles.menu_list}>
+                  {staticMenus.map((menu, index) => (
+                    <li
+                      key={menu.id}
+                      className={`${styles.menu_item} ${index === activeIndex ? styles.active : ''}`}
+                      onMouseEnter={() => setActiveIndex(index)}
+                    >
+                      <span className={styles.menu_icon}>{menu.icon}</span>
+                      <span className={styles.menu_name}>{menu.name}</span>
+                      <span className={styles.menu_path}>{menu.path}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div>
               <div>
@@ -106,30 +132,20 @@ const Search: React.FC = () => {
               <div className={styles.modal_footer_layout}>
                 <div className={styles.footer_left}>
                   <div className={styles.footer_item}>
-                    <div className={styles.footer_bg}>
-                      <Up width={16} height={16} />
-                    </div>
-                  </div>
-                  <div className={styles.footer_item}>
-                    <div className={styles.footer_bg}>
-                      <Down width={16} height={16} />
-                    </div>
+                    <kbd className={styles.keycap}>↑</kbd>
+                    <kbd className={styles.keycap}>↓</kbd>
                     <span className={styles.footer_text}>导航</span>
                   </div>
                   <div className={styles.footer_item}>
-                    <div className={styles.footer_bg}>
-                      <ESC width={28} height={20} />
-                    </div>
+                    <kbd className={styles.keycap}>Esc</kbd>
                     <span className={styles.footer_text}>关闭</span>
                   </div>
                   <div className={styles.footer_item}>
-                    <div className={styles.footer_bg}>
-                      <Enter width={20} height={16} />
-                    </div>
+                    <kbd className={styles.keycap}>↵</kbd>
                     <span className={styles.footer_text}>选择</span>
                   </div>
                 </div>
-                <div className={styles.footer_right}>共 0 项</div>
+                <div className={styles.footer_right}>共 {staticMenus.length} 项</div>
               </div>
             </div>
           </div>

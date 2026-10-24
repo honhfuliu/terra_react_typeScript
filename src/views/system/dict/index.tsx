@@ -39,13 +39,14 @@ import {
   dictTypeListInfo,
   getDictDataInfo,
 } from '@/service/dict.ts';
-import { useDict } from '@/hooks/useDict.ts';
+import { clearDictCache, removeDictCache, useDict } from '@/hooks/useDict.ts';
+import { COMMON_STATUS, DICT_TYPE, WHETHER } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 
 const Dict: React.FC = () => {
-  const statusOptions = useDict('sys_status'); // 状态
-  const tagColorOptions = useDict('sys_tag_color'); // 标签样式
+  const statusOptions = useDict(DICT_TYPE.SYS_STATUS); // 状态
+  const tagColorOptions = useDict(DICT_TYPE.SYS_TAG_COLOR); // 标签样式
   const { message } = App.useApp();
   // 搜索框内容
   const [searchText, setSearchText] = useState('');
@@ -250,6 +251,10 @@ const Dict: React.FC = () => {
       message.success('操作成功');
       setDictTypeModalOpen(false);
       dictForm.resetFields();
+      // 编辑字典类型可能修改编码/状态，清除全部字典缓存避免脏数据
+      if (values.dictId) {
+        clearDictCache();
+      }
       void getDictTypeList();
     } catch (e) {
       console.error(e);
@@ -266,6 +271,8 @@ const Dict: React.FC = () => {
     try {
       await deleteDictType(activeDict.dictId);
       message.success('删除成功');
+      // 该字典编码下的缓存成为脏数据，清除全部字典缓存
+      clearDictCache();
       void getDictTypeList();
     } catch (e) {
       console.error(e);
@@ -279,8 +286,8 @@ const Dict: React.FC = () => {
     dictDataForm.setFieldsValue({
       dictId: activeDict.dictId,
       dictSort: activeDict.count + 1,
-      isDefault: 'N',
-      status: '1',
+      isDefault: WHETHER.NO,
+      status: COMMON_STATUS.ENABLED,
     });
     setDictDataModalTitle('新增字典值');
     setDictDataModalOpen(true);
@@ -318,6 +325,10 @@ const Dict: React.FC = () => {
     try {
       await deleteDictData(record.dictCode);
       message.success('删除成功');
+      // 失效当前字典编码的缓存
+      if (activeDict?.dictType) {
+        removeDictCache(activeDict.dictType);
+      }
       // 刷新字典目录（更新字典值数量）与当前字典的字典值列表
       void getDictTypeList();
       if (activeDictId !== undefined) {
@@ -342,6 +353,10 @@ const Dict: React.FC = () => {
       message.success('操作成功');
       setDictDataModalOpen(false);
       dictDataForm.resetFields();
+      // 失效当前字典编码的缓存，通知使用该字典的页面重新拉取
+      if (activeDict?.dictType) {
+        removeDictCache(activeDict.dictType);
+      }
       // 刷新字典目录（更新字典值数量）与当前字典的字典值列表
       void getDictTypeList();
       if (activeDictId !== undefined) {
@@ -498,7 +513,11 @@ const Dict: React.FC = () => {
           ]}
         >
           <div className={styles.modalBody}>
-            <Form layout="vertical" form={dictForm} initialValues={{ status: '1' }}>
+            <Form
+              layout="vertical"
+              form={dictForm}
+              initialValues={{ status: COMMON_STATUS.ENABLED }}
+            >
               <Row gutter={[16, 0]}>
                 <Col xs={24} md={12}>
                   <Form.Item name="dictId" hidden>
@@ -567,7 +586,11 @@ const Dict: React.FC = () => {
             <Form
               layout="vertical"
               form={dictDataForm}
-              initialValues={{ dictSort: 1, isDefault: 'N', status: '1' }}
+              initialValues={{
+                dictSort: 1,
+                isDefault: WHETHER.NO,
+                status: COMMON_STATUS.ENABLED,
+              }}
             >
               <Row gutter={[16, 0]}>
                 <Col xs={24} md={12}>
@@ -607,8 +630,8 @@ const Dict: React.FC = () => {
                   <Form.Item<AddDictDataType> label="是否默认" name="isDefault">
                     <Radio.Group
                       options={[
-                        { value: 'Y', label: '是' },
-                        { value: 'N', label: '否' },
+                        { value: WHETHER.YES, label: '是' },
+                        { value: WHETHER.NO, label: '否' },
                       ]}
                     />
                   </Form.Item>

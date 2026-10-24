@@ -43,6 +43,7 @@ import {
 } from '@/service/role.ts';
 import { TableRowSelection } from 'antd/es/table/interface';
 import { useDict } from '@/hooks/useDict.ts';
+import { COMMON_STATUS, DATE_FORMAT, DICT_TYPE, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { FilterOutlined } from '@ant-design/icons';
@@ -115,7 +116,7 @@ const collectAncestorKeys = (treeData: TreeDataNode[], keys: React.Key[]): React
 };
 
 const Role: React.FC = () => {
-  const statusOptions = useDict('sys_status'); // 状态
+  const statusOptions = useDict(DICT_TYPE.SYS_STATUS); // 状态
   const { message } = App.useApp();
   // 菜单数据存储
   const [menuTree, setMenuTree] = useState<TreeDataNode[]>([]);
@@ -134,8 +135,8 @@ const Role: React.FC = () => {
   const [searchForm] = Form.useForm<RoleSearchType>();
   const [roleData, setRoleDate] = useState<RoleRow[]>([]);
   const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
+    current: PAGINATION.DEFAULT_PAGE_NUM,
+    pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
   });
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // 选中key存储
@@ -260,8 +261,8 @@ const Role: React.FC = () => {
       pageSize,
     };
     if (searchParams.createTime && Array.isArray(searchParams.createTime)) {
-      params.startTime = searchParams.createTime[0].format('YYYY-MM-DD HH:mm:ss');
-      params.endTime = searchParams.createTime[1].format('YYYY-MM-DD HH:mm:ss');
+      params.startTime = searchParams.createTime[0].format(DATE_FORMAT.DATE_TIME);
+      params.endTime = searchParams.createTime[1].format(DATE_FORMAT.DATE_TIME);
       delete params.createTime;
     }
     try {
@@ -276,7 +277,7 @@ const Role: React.FC = () => {
     }
   };
   useEffect(() => {
-    getRoleList(1, 10);
+    getRoleList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   }, []);
 
   // 对话框
@@ -368,19 +369,19 @@ const Role: React.FC = () => {
   const handleSearch = async () => {
     setPagination((prev) => ({
       ...prev,
-      current: 1,
+      current: PAGINATION.DEFAULT_PAGE_NUM,
     }));
-    await getRoleList(1, pagination.pageSize);
+    await getRoleList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize);
   };
   // 重置
   const handleResetSearch = async () => {
     searchForm.resetFields();
     setPagination((prev) => ({
       ...prev,
-      current: 1,
-      pageSize: 10,
+      current: PAGINATION.DEFAULT_PAGE_NUM,
+      pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     }));
-    await getRoleList(1, 10);
+    await getRoleList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   };
 
   // 分页处理
@@ -561,7 +562,11 @@ const Role: React.FC = () => {
           ]}
         >
           <div className={styles.modalBody}>
-            <Form layout="vertical" initialValues={{ status: '1', sort: 0 }} form={roleForm}>
+            <Form
+              layout="vertical"
+              initialValues={{ status: COMMON_STATUS.ENABLED, sort: 0 }}
+              form={roleForm}
+            >
               <Row gutter={[16, 0]}>
                 <Col xs={24} md={12}>
                   <Form.Item name="roleId" hidden>

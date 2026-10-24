@@ -49,6 +49,13 @@ import {
   NoticeRow,
 } from '@/service/notice.ts';
 import { useDict } from '@/hooks/useDict.ts';
+import {
+  COMMON_STATUS,
+  DATE_FORMAT,
+  DICT_TYPE,
+  NOTICE_STATUS,
+  PAGINATION,
+} from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { useSelector } from 'react-redux';
@@ -73,8 +80,8 @@ interface AnnounceFormType {
 }
 
 const Announcement: React.FC = () => {
-  const noticeTypeOptions = useDict('sys_notice_type'); // 类型
-  const noticeStatusOptions = useDict('sys_notice_status'); // 状态
+  const noticeTypeOptions = useDict(DICT_TYPE.SYS_NOTICE_TYPE); // 类型
+  const noticeStatusOptions = useDict(DICT_TYPE.SYS_NOTICE_STATUS); // 状态
   const { message } = App.useApp();
   // 按钮级权限（与后端 @SaCheckPermission 对齐）
   const permissions = useSelector((state: RootState) => state.permission.permissions);
@@ -88,8 +95,8 @@ const Announcement: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   // 服务端分页
   const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
+    current: PAGINATION.DEFAULT_PAGE_NUM,
+    pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
   });
   // 表格行多选（批量发布等操作使用）
@@ -130,8 +137,8 @@ const Announcement: React.FC = () => {
     // 发布时间范围转换为后端需要的 startTime / endTime 字符串（按所选时分秒精确传递）
     if (searchValues.publishTime && searchValues.publishTime.length === 2) {
       const [start, end] = searchValues.publishTime;
-      params.startTime = start.format('YYYY-MM-DD HH:mm:ss');
-      params.endTime = end.format('YYYY-MM-DD HH:mm:ss');
+      params.startTime = start.format(DATE_FORMAT.DATE_TIME);
+      params.endTime = end.format(DATE_FORMAT.DATE_TIME);
       delete params.publishTime;
     }
 
@@ -156,18 +163,18 @@ const Announcement: React.FC = () => {
 
   // 首次加载
   useEffect(() => {
-    void fetchList(1, 10);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   }, []);
 
   // 搜索：回到第一页
   const handleSearch = () => {
-    void fetchList(1, pagination.pageSize);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize);
   };
 
   // 重置：清空筛选条件并重新查询
   const handleResetSearch = () => {
     searchForm.resetFields();
-    void fetchList(1, pagination.pageSize);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize);
   };
 
   // 翻页
@@ -300,8 +307,11 @@ const Announcement: React.FC = () => {
       message.warning('所选公告的发布状态不一致，请选择状态相同的公告后再发布');
       return null;
     }
-    // 已发布（status === '2'）的无需重复发布
-    if (selectedRows[0].status === '2' || selectedRows[0].status === '3') {
+    // 已发布 / 已下架的无需重复发布
+    if (
+      selectedRows[0].status === NOTICE_STATUS.PUBLISHED ||
+      selectedRows[0].status === NOTICE_STATUS.OFFLINE
+    ) {
       message.warning('所选公告均为「已发布 已下线」状态，无需重复发布');
       return null;
     }
@@ -353,12 +363,13 @@ const Announcement: React.FC = () => {
     const items: NonNullable<MenuProps['items']> = [];
     if (
       hasEditPerm &&
-      record.isTop !== '1' &&
-      (record.status === '1' || record.status === '2')
+      record.isTop !== COMMON_STATUS.ENABLED &&
+      (record.status === NOTICE_STATUS.DRAFT ||
+        record.status === NOTICE_STATUS.PUBLISHED)
     ) {
       items.push({ key: 'top', icon: <PushpinOutlined />, label: '置顶' });
     }
-    if (hasEditPerm && record.status === '2') {
+    if (hasEditPerm && record.status === NOTICE_STATUS.PUBLISHED) {
       items.push({ key: 'offline', icon: <ArrowDownOutlined />, label: '下架公告' });
     }
     if (hasDeletePerm) {
@@ -396,7 +407,9 @@ const Announcement: React.FC = () => {
         <div className={styles.titleCell}>
           <div className={styles.titleLine}>
             <span className={styles.annTitle}>{record.title}</span>
-            {record.isTop === '1' && <span className={styles.topTag}>置顶</span>}
+            {record.isTop === COMMON_STATUS.ENABLED && (
+              <span className={styles.topTag}>置顶</span>
+            )}
           </div>
           <span className={styles.annSummary}>{record.summary}</span>
         </div>

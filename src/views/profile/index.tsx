@@ -1,5 +1,19 @@
 import * as React from 'react';
-import { App, Avatar, Button, Card, Form, Input, Modal, Radio, Tag, Typography } from 'antd';
+import {
+  App,
+  Avatar,
+  Button,
+  Card,
+  Form,
+  GetProp,
+  Input,
+  Modal,
+  Radio,
+  Tag,
+  Typography,
+  Upload,
+  UploadProps,
+} from 'antd';
 import type { RadioChangeEvent } from 'antd';
 import {
   CameraOutlined,
@@ -13,181 +27,166 @@ import {
   PhoneOutlined,
   SafetyOutlined,
 } from '@ant-design/icons';
+import {
+  changePassword,
+  getUserProfile,
+  updateUserProfile,
+  uploadAvatar,
+  UserProfileType,
+} from '@/service/user.ts';
+import { useDict } from '@/hooks/useDict.ts';
 import styles from './index.module.less';
+import DictTag from '@/components/DictTag';
+import storage from '@/utils/storage.ts';
+import { COMMON_STATUS, DICT_TYPE, STORAGE_KEY } from '@/constants';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
-const { TextArea } = Input;
 
-// 修改密码对话框
-interface ChangePwdModalProps {
-  open: boolean;
-  onClose: () => void;
-}
-
+// 修改密码表单值
 interface ChangePwdFormValues {
   oldPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
 
-const ChangePwdModal: React.FC<ChangePwdModalProps> = ({ open, onClose }) => {
-  const [form] = Form.useForm<ChangePwdFormValues>();
-  const { message } = App.useApp();
-  const [showOldPwd, setShowOldPwd] = React.useState(false);
-  const [showNewPwd, setShowNewPwd] = React.useState(false);
-  const [showConfirmPwd, setShowConfirmPwd] = React.useState(false);
-  const [newPwd, setNewPwd] = React.useState('');
-
-  // 密码强度计算
-  const getStrength = (pwd: string): number => {
-    if (!pwd) return 0;
-    let score = 0;
-    if (pwd.length >= 8) score++;
-    if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
-    if (/\d/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    return Math.min(score, 3);
-  };
-
-  const strength = getStrength(newPwd);
-  const strengthLabels = ['', '弱', '中', '强'];
-  const strengthColors = ['#ff4d4f', '#faad14', '#52c41a'];
-
-  const handleOk = async () => {
-    try {
-      await form.validateFields();
-      message.success('密码修改成功');
-      form.resetFields();
-      setNewPwd('');
-      onClose();
-    } catch {
-      // 校验失败，Modal 会自动显示错误
-    }
-  };
-
-  const handleCancel = () => {
-    form.resetFields();
-    setNewPwd('');
-    onClose();
-  };
-
-  return (
-    <Modal
-      title="修改登录密码"
-      open={open}
-      onOk={handleOk}
-      onCancel={handleCancel}
-      okText="确认修改"
-      cancelText="取消"
-      width={460}
-      centered
-    >
-      <Form
-        form={form}
-        layout="vertical"
-        className={styles.modalForm}
-        onValuesChange={(changed) => {
-          if ('newPassword' in changed) {
-            setNewPwd(changed.newPassword || '');
-          }
-        }}
-      >
-        <Form.Item
-          label="当前密码"
-          name="oldPassword"
-          rules={[{ required: true, message: '请输入当前密码' }]}
-        >
-          <Input.Password
-            placeholder="请输入当前登录密码"
-            iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="新密码"
-          name="newPassword"
-          rules={[
-            { required: true, message: '请输入新密码' },
-            { min: 8, message: '密码长度至少8位' },
-            {
-              pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-              message: '密码需包含大小写字母和数字',
-            },
-          ]}
-        >
-          <Input.Password
-            placeholder="至少8位，含大小写字母、数字"
-            iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
-          />
-        </Form.Item>
-
-        {newPwd && (
-          <div className={styles.pwdStrength}>
-            <div className={styles.strengthBar}>
-              {[1, 2, 3].map((seg) => (
-                <div
-                  key={seg}
-                  className={styles.barSegment}
-                  style={{
-                    background: seg <= strength ? strengthColors[strength - 1] : undefined,
-                  }}
-                />
-              ))}
-            </div>
-            <Text type="secondary" className={styles.strengthText}>
-              密码强度：{strengthLabels[strength]}
-            </Text>
-          </div>
-        )}
-
-        <Form.Item
-          label="确认新密码"
-          name="confirmPassword"
-          dependencies={['newPassword']}
-          rules={[
-            { required: true, message: '请再次输入新密码' },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue('newPassword') === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(new Error('两次输入的密码不一致'));
-              },
-            }),
-          ]}
-        >
-          <Input.Password
-            placeholder="请再次输入新密码"
-            iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
-          />
-        </Form.Item>
-      </Form>
-
-      {/* 隐藏未使用变量以避免告警 */}
-      <span style={{ display: 'none' }}>
-        {String(showOldPwd)}
-        {String(showNewPwd)}
-        {String(showConfirmPwd)}
-      </span>
-    </Modal>
-  );
-};
+type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
 
 // 主页面
 const Profile: React.FC = () => {
   const { message } = App.useApp();
+  const sexOptions = useDict(DICT_TYPE.SYS_SEX);
+  const statusOptions = useDict(DICT_TYPE.SYS_STATUS);
   const [changePwdOpen, setChangePwdOpen] = React.useState(false);
-  const [gender, setGender] = React.useState<string>('male');
-  const [remark, setRemark] = React.useState('负责平台系统管理与日常维护。');
+  // 接口返回的用户信息
+  const [profile, setProfile] = React.useState<UserProfileType | null>(null);
+  // 可编辑字段
+  const [nickname, setNickname] = React.useState('');
+  const [gender, setGender] = React.useState<string>('0');
+  const [remark, setRemark] = React.useState('');
+  const [pwdForm] = Form.useForm<ChangePwdFormValues>();
+  const [imageUrl, setImageUrl] = React.useState<string>();
+  // 保存修改 loading
+  const [saving, setSaving] = React.useState(false);
+  // 修改密码提交 loading
+  const [pwdLoading, setPwdLoading] = React.useState(false);
 
-  const MAX_REMARK_LEN = 120;
+  const navigate = useNavigate(); // 用于导航
+
+  // 与后端 DTO 校验保持一致
+  const MAX_NICKNAME_LEN = 64;
+  const MAX_REMARK_LEN = 500;
+
+  // 查询当前登录用户信息
+  const fetchProfile = React.useCallback(async () => {
+    try {
+      const data = await getUserProfile();
+      setProfile(data);
+      setNickname(data.nickname || '');
+      setGender(data.sex || '0');
+      setRemark(data.remark || '');
+      setImageUrl(data.avatar || '');
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    void fetchProfile();
+  }, [fetchProfile]);
 
   const handleGenderChange = (e: RadioChangeEvent) => {
     setGender(e.target.value);
   };
 
-  const handleSave = () => {
-    message.success('资料保存成功');
+  // 保存个人信息（昵称、性别、备注）
+  const handleSave = async () => {
+    const trimmedNickname = nickname.trim();
+    if (!trimmedNickname) {
+      message.warning('用户昵称不能为空');
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateUserProfile({
+        nickname: trimmedNickname,
+        sex: gender,
+        remark: remark.trim() || '',
+      });
+      message.success('资料保存成功');
+      // 重新拉取，刷新“最后更新”时间等信息
+      await fetchProfile();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // 修改密码：确认
+  const handlePwdOk = async () => {
+    let values;
+    // 表单校验
+    try {
+      values = await pwdForm.validateFields();
+    } catch (e) {
+      // 表单校验失败，保持弹窗打开
+      console.error(e);
+      return;
+    }
+    // 请求修改密码
+    try {
+      setPwdLoading(true);
+      await changePassword({
+        oldPassword: values.oldPassword,
+        newPassword: values.newPassword,
+        confirmPassword: values.confirmPassword,
+      });
+      message.success('密码修改成功，请重新登录');
+      pwdForm.resetFields();
+      setChangePwdOpen(false);
+      // 后续处理退出登录
+      storage.remove(STORAGE_KEY.TOKEN);
+      storage.remove(STORAGE_KEY.USER);
+      navigate('/login', { replace: true });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setPwdLoading(false);
+    }
+  };
+
+  // 修改密码：取消
+  const handlePwdCancel = () => {
+    pwdForm.resetFields();
+    setChangePwdOpen(false);
+  };
+
+  // 上传文件检测
+  const beforeUpload = (file: FileType) => {
+    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+    if (!isJpgOrPng) {
+      message.error('只允许上传 JPG 或 PNG 格式的图片');
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('图片必须小于 2MB!');
+    }
+    return isJpgOrPng && isLt2M;
+  };
+  // 上传文件
+  const handleUpload: UploadProps['customRequest'] = async (options) => {
+    const { file, onSuccess, onError } = options;
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file as File);
+      const res = await uploadAvatar(formData);
+      setImageUrl(res);
+      console.log(res);
+      onSuccess?.(res);
+    } catch (error) {
+      onError?.(error as Error);
+    }
   };
 
   return (
@@ -203,8 +202,12 @@ const Profile: React.FC = () => {
             管理你的账号信息、联系方式与安全设置
           </Text>
         </div>
-        <Tag icon={<CheckCircleFilled />} color="success" className={styles.statusTag}>
-          账号正常
+        <Tag
+          icon={<CheckCircleFilled />}
+          color={profile?.status === COMMON_STATUS.ENABLED ? 'success' : 'error'}
+          className={styles.statusTag}
+        >
+          {profile?.status === COMMON_STATUS.ENABLED ? '账号正常' : '账号停用'}
         </Tag>
       </div>
 
@@ -214,45 +217,54 @@ const Profile: React.FC = () => {
         <div className={styles.leftColumn}>
           {/* 用户信息卡片 */}
           <Card
-            bordered={false}
+            variant="borderless"
             className={`${styles.card} ${styles.userCard}`}
             styles={{ body: { padding: 0 } }}
           >
             <div className={styles.banner} />
             <div className={styles.avatarWrap}>
-              <Avatar size={100} icon={<LoginOutlined />} className={styles.avatar} />
+              <Avatar
+                size={100}
+                icon={<LoginOutlined />}
+                src={`/upload/${imageUrl}`}
+                className={styles.avatar}
+              />
               <div className={styles.cameraIcon}>
-                <CameraOutlined />
+                <Upload
+                  name="avatar"
+                  className="avatar-uploader"
+                  showUploadList={false}
+                  beforeUpload={beforeUpload}
+                  customRequest={handleUpload}
+                >
+                  <CameraOutlined />
+                </Upload>
               </div>
             </div>
             <div className={styles.userInfo}>
               <Title level={4} className={styles.userName}>
-                张伟
+                {profile?.nickname || '-'}
               </Title>
-              <div className={styles.userMeta}>
-                <Text type="secondary">超级管理员</Text>
-                {/*<span className={styles.verifiedBadge}>*/}
-                {/*  <CheckCircleFilled />*/}
-                {/*  账号已认证*/}
-                {/*</span>*/}
-              </div>
+              {/*<div className={styles.userMeta}>*/}
+              {/*  <Text type="secondary">超级管理员</Text>*/}
+              {/*</div>*/}
             </div>
             <div className={styles.divider} />
             <div className={styles.userStats}>
               <div className={styles.statItem}>
                 <div className={styles.statLabel}>用户编号</div>
-                <div className={styles.statValue}>U20240614001</div>
+                <div className={styles.statValue}>{profile?.userId ?? '-'}</div>
               </div>
               <div className={styles.statItem}>
                 <div className={styles.statLabel}>加入时间</div>
-                <div className={styles.statValue}>2024-06-14</div>
+                <div className={styles.statValue}>{profile?.createTime || '-'}</div>
               </div>
             </div>
           </Card>
 
           {/* 安全概览卡片 */}
           <Card
-            bordered={false}
+            variant="borderless"
             className={`${styles.card} ${styles.securityCard}`}
             styles={{ body: { padding: 0 } }}
           >
@@ -275,8 +287,11 @@ const Profile: React.FC = () => {
                   <MailOutlined className={styles.itemIcon} />
                   <span className={styles.itemText}>邮箱设置</span>
                 </div>
-                <Tag color="success" className={styles.itemStatusTag}>
-                  已设置
+                <Tag
+                  color={profile?.email ? 'success' : 'default'}
+                  className={styles.itemStatusTag}
+                >
+                  {profile?.email ? '已设置' : '未设置'}
                 </Tag>
               </div>
               <div className={styles.securityItem}>
@@ -284,8 +299,11 @@ const Profile: React.FC = () => {
                   <PhoneOutlined className={styles.itemIcon} />
                   <span className={styles.itemText}>手机设置</span>
                 </div>
-                <Tag color="success" className={styles.itemStatusTag}>
-                  已设置
+                <Tag
+                  color={profile?.phone ? 'success' : 'default'}
+                  className={styles.itemStatusTag}
+                >
+                  {profile?.phone ? '已设置' : '未设置'}
                 </Tag>
               </div>
             </div>
@@ -304,7 +322,7 @@ const Profile: React.FC = () => {
         <div className={styles.rightColumn}>
           {/* 基本资料卡片 */}
           <Card
-            bordered={false}
+            variant="borderless"
             className={`${styles.card} ${styles.profileCard}`}
             styles={{ body: { padding: 0 } }}
           >
@@ -314,59 +332,60 @@ const Profile: React.FC = () => {
                 <span>基本资料</span>
               </div>
               <Text type="secondary" className={styles.headerRight}>
-                最后更新：2024-06-18 14:32
+                最后更新：{profile?.updateTime || '-'}
               </Text>
             </div>
             <div className={styles.cardBody}>
               <div className={styles.formGrid}>
                 <div className={styles.formItem}>
                   <div className={styles.formLabel}>用户名</div>
-                  <Input value="zhangwei" readOnly />
+                  <Input value={profile?.username || ''} readOnly />
                 </div>
 
                 <div className={styles.formItem}>
                   <div className={styles.formLabel}>
                     <span className={styles.required}>*</span>用户昵称
                   </div>
-                  <Input defaultValue="张伟" />
+                  <Input
+                    value={nickname}
+                    maxLength={MAX_NICKNAME_LEN}
+                    onChange={(e) => setNickname(e.target.value)}
+                    placeholder="请输入用户昵称"
+                  />
                 </div>
 
                 <div className={styles.formItem}>
                   <div className={styles.formLabel}>邮箱</div>
-                  <Input value="zhangwei@example.com" readOnly prefix={<MailOutlined />} />
+                  <Input value={profile?.email || ''} readOnly prefix={<MailOutlined />} />
                 </div>
 
                 <div className={styles.formItem}>
                   <div className={styles.formLabel}>手机号</div>
-                  <Input value="138****2214" readOnly prefix={<PhoneOutlined />} />
+                  <Input value={profile?.phone || ''} readOnly prefix={<PhoneOutlined />} />
                 </div>
 
                 <div className={styles.formItem}>
                   <div className={styles.formLabel}>性别</div>
                   <Radio.Group value={gender} onChange={handleGenderChange}>
-                    <Radio value="unknown">未知</Radio>
-                    <Radio value="male">男</Radio>
-                    <Radio value="female">女</Radio>
+                    {sexOptions.map((item) => (
+                      <Radio key={item.dictValue} value={item.dictValue}>
+                        {item.dictLabel}
+                      </Radio>
+                    ))}
                   </Radio.Group>
                 </div>
 
                 <div className={styles.formItem}>
                   <div className={styles.formLabel}>账号状态</div>
-                  <Tag
-                    icon={<CheckCircleFilled />}
-                    color="processing"
-                    className={styles.statusTagLarge}
-                  >
-                    正常
-                  </Tag>
+                  <DictTag value={profile?.status} option={statusOptions} />
                 </div>
 
                 <div className={`${styles.formItem} ${styles.fullWidth}`}>
                   <div className={styles.formLabel}>个人备注</div>
-                  <TextArea
-                    rows={4}
+                  <Input.TextArea
+                    allowClear
+                    autoSize={{ minRows: 2, maxRows: 6 }}
                     maxLength={MAX_REMARK_LEN}
-                    showCount={{ formatter: ({ count, max }) => `${count} / ${max}` }}
                     value={remark}
                     onChange={(e) => setRemark(e.target.value)}
                     placeholder="请输入个人备注信息"
@@ -378,7 +397,7 @@ const Profile: React.FC = () => {
                 <Text type="secondary" className={styles.tip}>
                   修改资料后将记录到操作日志
                 </Text>
-                <Button type="primary" size="large" onClick={handleSave}>
+                <Button type="primary" size="large" loading={saving} onClick={handleSave}>
                   保存修改
                 </Button>
               </div>
@@ -387,7 +406,7 @@ const Profile: React.FC = () => {
 
           {/* 最近登录卡片 */}
           <Card
-            bordered={false}
+            variant="borderless"
             className={`${styles.card} ${styles.loginCard}`}
             styles={{ body: { padding: 0 } }}
           >
@@ -399,7 +418,7 @@ const Profile: React.FC = () => {
               <div className={styles.loginItem}>
                 <Text strong>本次登录：</Text>
                 <Text type="secondary">
-                  Chrome · Windows · 138.****.2214 · 2024-06-18 14:32 · 广东省广州市
+                  {profile?.lastLoginInfo || profile?.lastLoginTime || '-'}
                 </Text>
               </div>
             </div>
@@ -408,7 +427,66 @@ const Profile: React.FC = () => {
       </div>
 
       {/* 修改密码对话框 */}
-      <ChangePwdModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} />
+      <Modal
+        title="修改登录密码"
+        open={changePwdOpen}
+        onOk={handlePwdOk}
+        onCancel={handlePwdCancel}
+        okText="确认修改"
+        cancelText="取消"
+        width={460}
+        centered
+        confirmLoading={pwdLoading}
+      >
+        <Form form={pwdForm} layout="vertical" className={styles.modalForm}>
+          <Form.Item
+            label="当前密码"
+            name="oldPassword"
+            rules={[{ required: true, message: '原密码不能为空' }]}
+          >
+            <Input.Password
+              placeholder="请输入当前登录密码"
+              iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="新密码"
+            name="newPassword"
+            rules={[
+              { required: true, message: '新密码不能为空' },
+              { min: 6, max: 100, message: '新密码长度需在6-100个字符之间' },
+            ]}
+          >
+            <Input.Password
+              placeholder="请输入新密码（6-100个字符）"
+              iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="确认新密码"
+            name="confirmPassword"
+            dependencies={['newPassword']}
+            rules={[
+              { required: true, message: '确认密码不能为空' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('两次输入的密码不一致'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password
+              placeholder="请再次输入新密码"
+              iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

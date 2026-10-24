@@ -18,7 +18,12 @@ async function bootstrap() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <Provider store={store}>
-        <BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: false,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <AppProvider />
         </BrowserRouter>
       </Provider>

@@ -40,20 +40,21 @@ import {
 } from '@/service/menu.ts';
 import { removeEmptyChildren } from '@/utils/tree.ts';
 import { useDict } from '@/hooks/useDict.ts';
+import { COMMON_STATUS, DICT_TYPE, MENU_TYPE } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { FilterOutlined } from '@ant-design/icons';
 
 const Menu: React.FC = () => {
-  const statusOptions = useDict('sys_status'); // 状态
-  const menuTypeOptions = useDict('sys_menu_type'); // 菜单类型
+  const statusOptions = useDict(DICT_TYPE.SYS_STATUS); // 状态
+  const menuTypeOptions = useDict(DICT_TYPE.SYS_MENU_TYPE); // 菜单类型
 
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
   // 上级菜单数据存储
   const [menuTree, setMenuTree] = useState<MenuNode[]>([]);
   // 菜单类型
-  const [menuType, setMenuType] = useState<string>('M');
+  const [menuType, setMenuType] = useState<string>(MENU_TYPE.DIR);
   // 搜素表单获取
   const [searchForm] = Form.useForm<MenuSearchType>();
   // 提交表单获取
@@ -193,7 +194,7 @@ const Menu: React.FC = () => {
               编辑
             </Button>
           </Auth>
-          {record.menuType !== 'B' && record.menuType !== 'F' && (
+          {record.menuType !== MENU_TYPE.EMBED && record.menuType !== MENU_TYPE.BUTTON && (
             <Auth permission={'system:menu:add'}>
               <Button
                 className={styles.actionLink}
@@ -226,14 +227,14 @@ const Menu: React.FC = () => {
   // 添加子菜单
   const handleAddChild = async (id: number) => {
     menuForm.resetFields();
-    setMenuType('M');
+    setMenuType(MENU_TYPE.DIR);
     setModalTitle('添加子菜单');
     menuForm.setFieldsValue({
-      menuType: 'M',
+      menuType: MENU_TYPE.DIR,
       menuSort: 0,
-      status: '1',
-      visible: '1',
-      keepAlive: '1',
+      status: COMMON_STATUS.ENABLED,
+      visible: COMMON_STATUS.ENABLED,
+      keepAlive: COMMON_STATUS.ENABLED,
       parentId: id,
     });
     await showModal();
@@ -255,14 +256,14 @@ const Menu: React.FC = () => {
   // 新增
   const handleAdd = async () => {
     menuForm.resetFields();
-    setMenuType('M');
+    setMenuType(MENU_TYPE.DIR);
     setModalTitle('新增菜单');
     menuForm.setFieldsValue({
-      menuType: 'M',
+      menuType: MENU_TYPE.DIR,
       menuSort: 0,
-      status: '1',
-      visible: '1',
-      keepAlive: '1',
+      status: COMMON_STATUS.ENABLED,
+      visible: COMMON_STATUS.ENABLED,
+      keepAlive: COMMON_STATUS.ENABLED,
       parentId: 0,
     });
     await showModal();
@@ -516,7 +517,7 @@ const Menu: React.FC = () => {
                     </Form.Item>
                   </Col>
                   {/* 菜单图标：目录、菜单 */}
-                  {(menuType === 'M' || menuType === 'C') && (
+                  {(menuType === MENU_TYPE.DIR || menuType === MENU_TYPE.MENU) && (
                     <Col xs={24} md={12}>
                       <Form.Item<MenuAddType> label="菜单图标" name="icon">
                         <Input placeholder="请输入菜单图标" />
@@ -554,7 +555,7 @@ const Menu: React.FC = () => {
                     </Form.Item>
                   </Col>
                   {/* 路由名称：菜单 */}
-                  {menuType === 'C' && (
+                  {menuType === MENU_TYPE.MENU && (
                     <Col xs={24} md={12}>
                       <Form.Item<MenuAddType>
                         label="路由名称"
@@ -571,7 +572,7 @@ const Menu: React.FC = () => {
                   )}
 
                   {/* 路由地址：菜单 */}
-                  {(menuType === 'M' || menuType === 'C') && (
+                  {(menuType === MENU_TYPE.DIR || menuType === MENU_TYPE.MENU) && (
                     <Col xs={24} md={12}>
                       <Form.Item<MenuAddType>
                         label="路由地址"
@@ -592,7 +593,7 @@ const Menu: React.FC = () => {
                     </Col>
                   )}
                   {/* 组件路径：菜单 */}
-                  {menuType === 'C' && (
+                  {menuType === MENU_TYPE.MENU && (
                     <Col xs={24} md={12}>
                       <Form.Item<MenuAddType>
                         label="组件路径"
@@ -607,7 +608,7 @@ const Menu: React.FC = () => {
                     </Col>
                   )}
                   {/* 权限字符：按钮 */}
-                  {(menuType === 'F' || menuType === 'C') && (
+                  {(menuType === MENU_TYPE.BUTTON || menuType === MENU_TYPE.MENU) && (
                     <Col xs={24} md={12}>
                       <Form.Item<MenuAddType>
                         label="权限字符"
@@ -629,7 +630,7 @@ const Menu: React.FC = () => {
                     </Col>
                   )}
                   {/* 是否缓存：菜单 */}
-                  {menuType === 'C' && (
+                  {menuType === MENU_TYPE.MENU && (
                     <Col xs={24} md={12}>
                       <Form.Item<MenuAddType>
                         label="是否缓存"
@@ -642,15 +643,15 @@ const Menu: React.FC = () => {
                       >
                         <Radio.Group
                           options={[
-                            { value: '1', label: '缓存' },
-                            { value: '0', label: '不缓存' },
+                            { value: COMMON_STATUS.ENABLED, label: '缓存' },
+                            { value: COMMON_STATUS.DISABLED, label: '不缓存' },
                           ]}
                         />
                       </Form.Item>
                     </Col>
                   )}
                   {/* 显示状态：菜单 */}
-                  {(menuType === 'M' || menuType === 'C') && (
+                  {(menuType === MENU_TYPE.DIR || menuType === MENU_TYPE.MENU) && (
                     <Col xs={24} md={12}>
                       <Form.Item<MenuAddType>
                         label="显示状态"
@@ -662,8 +663,8 @@ const Menu: React.FC = () => {
                       >
                         <Radio.Group
                           options={[
-                            { value: '1', label: '显示' },
-                            { value: '0', label: '不显示' },
+                            { value: COMMON_STATUS.ENABLED, label: '显示' },
+                            { value: COMMON_STATUS.DISABLED, label: '不显示' },
                           ]}
                         />
                       </Form.Item>

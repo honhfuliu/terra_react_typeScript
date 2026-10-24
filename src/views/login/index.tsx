@@ -5,6 +5,7 @@ import Logo from '@/assets/images/logo.svg';
 import { login, getCode, LoginFormType } from '@/service/auto.ts';
 import Loading from '@/components/Loading';
 import storage from '@/utils/storage.ts';
+import { STORAGE_KEY } from '@/constants';
 import { initPermission } from '@/permission';
 import { useNavigate } from 'react-router-dom';
 import { store } from '@/store';
@@ -56,12 +57,12 @@ const Login: React.FC = () => {
     try {
       const result = await login({ ...values, uuid: captchaUuid });
       if (result) {
-        storage.set('$_token', result.token);
+        storage.set(STORAGE_KEY.TOKEN, result.token);
         const userInfo = {
           username: result.username,
           nickname: result.nickname,
         };
-        storage.set('$_user', JSON.stringify(userInfo));
+        storage.set(STORAGE_KEY.USER, JSON.stringify(userInfo));
         await initPermission();
         // 根据后端返回的路由树，跳转到第一个可访问的页面
         // 无权限的页面后端不会下发，因此不会出现登录后跳转到无权限页面的情况

@@ -19,6 +19,7 @@ import { clearPermission } from '@/store/modules/permission.ts';
 import { RootState } from '@/store';
 import { logout } from '@/service/auto.ts';
 import storage from '@/utils/storage.ts';
+import { STORAGE_KEY } from '@/constants';
 import Search from '@/layout/AdminLayout/Header/Search';
 import GERENZHONGXIN from '@/assets/svgs/GERENZHONGXIN.svg?react';
 import Exit from '@/assets/svgs/Exit.svg?react';
@@ -47,8 +48,8 @@ const Header: React.FC = () => {
         // 调用后端退出接口（使当前会话失效），即使接口失败也清理本地登录态
         await logout();
         // 清除本地缓存中的 token 和用户信息
-        storage.remove('$_token');
-        storage.remove('$_user');
+        storage.remove(STORAGE_KEY.TOKEN);
+        storage.remove(STORAGE_KEY.USER);
         // 重置权限 / 动态路由数据，避免下个账号看到残留数据
         dispatch(clearPermission());
         message.success('已退出登录');

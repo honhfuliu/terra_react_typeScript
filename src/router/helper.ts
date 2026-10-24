@@ -1,7 +1,5 @@
 import { AppRoute } from '@/types/route.ts';
-
-// 布局组件标识（后端数据结构中根布局的 component 值）
-const LAYOUT_COMPONENT = 'Layout';
+import { LAYOUT_COMPONENT } from '@/constants';
 
 // 从后端路由树中递归查找第一个可访问的页面路径
 // 规则：有 path、有 component、且不是 Layout 布局的节点才算页面

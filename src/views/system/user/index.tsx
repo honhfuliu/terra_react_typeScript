@@ -51,12 +51,14 @@ import {
 } from '@/service/user.ts';
 import { RoleNode, roleOptions } from '@/service/role.ts';
 import { useDict } from '@/hooks/useDict.ts';
+import { COMMON_STATUS, DATE_FORMAT, DICT_TYPE, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
+import { PaginationState } from '@/types/common.ts';
 
 const User: React.FC = () => {
-  const sexOptions = useDict('sys_sex'); // 性别状态
-  const statusOptions = useDict('sys_status'); // 状态
+  const sexOptions = useDict(DICT_TYPE.SYS_SEX); // 性别状态
+  const statusOptions = useDict(DICT_TYPE.SYS_STATUS); // 状态
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
   const [deptTree, setDeptTree] = useState<TreeDataNode[]>([]); // 部门树结构
@@ -71,9 +73,9 @@ const User: React.FC = () => {
   // 表格数据
   const [userListData, setUserListData] = useState<UserRow[]>([]);
 
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
+  const [pagination, setPagination] = useState<PaginationState>({
+    current: PAGINATION.DEFAULT_PAGE_NUM,
+    pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
   });
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -95,7 +97,7 @@ const User: React.FC = () => {
   const handleAdd = async () => {
     userForm.resetFields();
     userForm.setFieldsValue({
-      status: '1',
+      status: COMMON_STATUS.ENABLED,
       sex: '0',
       password: '123456',
       deptId: selectedKeys?.[0],
@@ -332,8 +334,8 @@ const User: React.FC = () => {
       pageSize,
     };
     if (searchParams.createTime && Array.isArray(searchParams.createTime)) {
-      params.startTime = searchParams.createTime[0].format('YYYY-MM-DD HH:mm:ss');
-      params.endTime = searchParams.createTime[1].format('YYYY-MM-DD HH:mm:ss');
+      params.startTime = searchParams.createTime[0].format(DATE_FORMAT.DATE_TIME);
+      params.endTime = searchParams.createTime[1].format(DATE_FORMAT.DATE_TIME);
       delete params.createTime;
     }
     try {
@@ -351,7 +353,7 @@ const User: React.FC = () => {
   };
   useEffect(() => {
     void loadMenuTree();
-    void getUserList(1, 10);
+    void getUserList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   }, []);
 
   // 分页处理
@@ -385,26 +387,26 @@ const User: React.FC = () => {
   const handleSelect: TreeProps['onSelect'] = async (keys) => {
     console.log(keys);
     setSelectedKeys(keys);
-    await getUserList(1, pagination.pageSize, keys?.[0]);
+    await getUserList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize, keys?.[0]);
   };
   // 重置
   const handleResetSearch = async () => {
     searchForm.resetFields();
     setPagination((prev) => ({
       ...prev,
-      current: 1,
-      pageSize: 10,
+      current: PAGINATION.DEFAULT_PAGE_NUM,
+      pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     }));
     setSelectedKeys([]);
-    await getUserList(1, 10);
+    await getUserList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   };
   // 搜索
   const handleSearch = async () => {
     setPagination((prev) => ({
       ...prev,
-      current: 1,
+      current: PAGINATION.DEFAULT_PAGE_NUM,
     }));
-    await getUserList(1, pagination.pageSize, selectedKeys?.[0]);
+    await getUserList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize, selectedKeys?.[0]);
   };
   return (
     <div className={styles.layout}>
@@ -634,7 +636,11 @@ const User: React.FC = () => {
         ]}
       >
         <div className={styles.modalBody}>
-          <Form layout="vertical" form={userForm} initialValues={{ status: '1', sex: '0' }}>
+          <Form
+            layout="vertical"
+            form={userForm}
+            initialValues={{ status: COMMON_STATUS.ENABLED, sex: '0' }}
+          >
             <Row gutter={[16, 0]}>
               <Col xs={24} md={12}>
                 <Form.Item name="userId" hidden>

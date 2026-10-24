@@ -92,3 +92,73 @@ export const deleteUserByIds = async (roleIds: React.Key[]) => {
     throw e;
   }
 };
+
+// 个人中心用户信息
+export type UserProfileType = {
+  userId: number;
+  username: string;
+  nickname: string;
+  email: string;
+  phone: string;
+  sex: string; // 性别：0-未知 1-男 2-女（字典 sys_sex）
+  status: string; // 1-正常 0-停用
+  remark: string | null;
+  avatar: string | null;
+  createTime: string;
+  updateTime: string;
+  lastLoginInfo: string | null; // 最近登录信息（浏览器 · 系统 · IP · 时间 · 归属地）
+  lastLoginTime: string | null;
+};
+
+// 修改个人信息参数
+export type UpdateUserProfileType = {
+  nickname: string; // 昵称（必填，最长 64）
+  sex: string; // 性别：0-未知 1-男 2-女
+  remark?: string; // 个人备注（最长 500）
+};
+
+// 查询当前登录用户信息
+export const getUserProfile = async () => {
+  try {
+    return await request.get<UserProfileType>('/system/user/profile');
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+// 修改个人信息（昵称、性别、备注）
+export const updateUserProfile = async (data: UpdateUserProfileType) => {
+  try {
+    return await request.post<void>('/system/user/profile/update', data);
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+// 修改密码参数
+export type ChangePasswordType = {
+  oldPassword: string; // 原密码
+  newPassword: string; // 新密码（6-100 位）
+  confirmPassword: string; // 确认新密码
+};
+
+// 修改密码
+export const changePassword = async (data: ChangePasswordType) => {
+  try {
+    return await request.post<void>('/system/user/changePassword', data);
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+// 头像上传
+export const uploadAvatar = (formData: FormData) => {
+  try {
+    return request.post<string>('/system/user/avatar', formData);
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};

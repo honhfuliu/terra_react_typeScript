@@ -16,7 +16,7 @@ export type OperationLogRow = {
   requestParams: string | null; // 请求参数（JSON 字符串）
   requestIp: string; // 请求 IP 地址
   requestLocation: string | null; // 请求归属地
-  status: number; // 操作状态：1 成功 0 失败
+  status: string; // 操作状态：1 成功 0 失败
   errorMessage: string | null; // 错误信息
   costTime: number; // 耗时（毫秒）
   createTime: string; // 创建时间（yyyy-MM-dd HH:mm:ss）

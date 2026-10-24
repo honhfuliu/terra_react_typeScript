@@ -9,7 +9,6 @@ import { getHomePath } from '@/router/helper.ts';
 import constantRoutes from '@/router/routes.tsx';
 import { isLogin } from '@/utils/auth.ts';
 import * as React from 'react';
-
 // 跳转到动态首页（后端返回的第一个可访问页面，无权限页面后端不会下发，避免写死跳转导致 403/404）
 const HomeNavigate: React.FC = () => {
   const routes = useSelector((state: RootState) => state.permission.routes);

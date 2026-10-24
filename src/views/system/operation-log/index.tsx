@@ -32,15 +32,13 @@ import {
   OperationLogSearchType,
 } from '@/service/operationLog.ts';
 import { useDict } from '@/hooks/useDict.ts';
+import { DATE_FORMAT, DICT_TYPE, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import JsonViewer from '@/components/JsonViewer';
 
 const { RangePicker } = DatePicker;
 
 // 操作状态：1 成功 0 失败
-const STATUS_SUCCESS = 1;
-const STATUS_FAIL = 0;
-
 // 筛选条件（表单字段，与服务端查询参数分离）
 interface LogSearchFormType {
   username?: string; // 操作账号
@@ -52,35 +50,9 @@ interface LogSearchFormType {
 }
 
 const OperationLog: React.FC = () => {
-  const operateTypeOptions = useDict('sys_operate_type');
-  const operateModuleOptions = useDict('sys_operate_module');
-  const resultStatusOptions = useDict('sys_result_status');
-
-  const avatar = 'https://i.imgur.com/MK3eW3As.jpg';
-  const longArray = new Array(1000).fill(1);
-  const example = {
-    avatar,
-    string: 'Lorem ipsum dolor sit amet',
-    integer: 42,
-    float: 114.514,
-    bigint: 10086n,
-    null: null,
-    undefined,
-    timer: 0,
-    date: new Date('Tue Sep 13 2022 14:07:44 GMT-0500 (Central Daylight Time)'),
-    array: [19, 100.86, 'test', NaN, Infinity],
-    nestedArray: [
-      [1, 2],
-      [3, 4],
-    ],
-    object: {
-      'first-child': true,
-      'second-child': false,
-      'last-child': null,
-    },
-    longArray,
-    string_number: '1234',
-  };
+  const operateTypeOptions = useDict(DICT_TYPE.SYS_OPERATE_TYPE);
+  const operateModuleOptions = useDict(DICT_TYPE.SYS_OPERATE_MODULE);
+  const resultStatusOptions = useDict(DICT_TYPE.SYS_RESULT_STATUS);
 
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
@@ -97,8 +69,8 @@ const OperationLog: React.FC = () => {
   const [deleting, setDeleting] = useState<boolean>(false);
   // 服务端分页
   const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
+    current: PAGINATION.DEFAULT_PAGE_NUM,
+    pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
   });
 
@@ -122,8 +94,8 @@ const OperationLog: React.FC = () => {
     // 操作时间范围转换为后端需要的 startTime / endTime 字符串
     if (searchValues.operationTime && searchValues.operationTime.length === 2) {
       const [start, end] = searchValues.operationTime;
-      params.startTime = start.format('YYYY-MM-DD HH:mm:ss');
-      params.endTime = end.format('YYYY-MM-DD HH:mm:ss');
+      params.startTime = start.format(DATE_FORMAT.DATE_TIME);
+      params.endTime = end.format(DATE_FORMAT.DATE_TIME);
     }
 
     setLoading(true);
@@ -149,18 +121,18 @@ const OperationLog: React.FC = () => {
 
   // 首次加载
   useEffect(() => {
-    void fetchList(1, 10);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   }, []);
 
   // 搜索：回到第一页
   const handleSearch = () => {
-    void fetchList(1, pagination.pageSize);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize);
   };
 
   // 重置：清空筛选条件并重新查询
   const handleResetSearch = () => {
     searchForm.resetFields();
-    void fetchList(1, pagination.pageSize);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize);
   };
 
   // 翻页
@@ -180,7 +152,7 @@ const OperationLog: React.FC = () => {
       await operationLogClear();
       message.success('日志已清空');
       // 清空后回到第一页重新拉取，保证分页状态与数据一致
-      void fetchList(1, pagination.pageSize);
+      void fetchList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize);
     } catch (e) {
       console.error(e);
     } finally {
@@ -236,16 +208,6 @@ const OperationLog: React.FC = () => {
     return value;
   };
 
-  // 状态标签
-  const renderStatusTag = (status: number) => (
-    <span
-      className={`${styles.statusTag} ${
-        status === STATUS_SUCCESS ? styles.statusSuccess : styles.statusFail
-      }`}
-    >
-      {status === STATUS_SUCCESS ? '成功' : '失败'}
-    </span>
-  );
 
   // 请求方法标签样式
   const methodClassName = (method: string) => {
@@ -281,19 +243,6 @@ const OperationLog: React.FC = () => {
       width: 110,
       render: (operation: string) => DictTag({ value: operation, option: operateTypeOptions }),
     },
-    // {
-    //   title: '操作对象',
-    //   key: 'target',
-    //   width: 160,
-    //   render: (_, record) => (
-    //     <div className={styles.targetCell}>
-    //       <span className={styles.targetName}>{record.targetName || '-'}</span>
-    //       {record.targetType && (
-    //         <span className={styles.targetType}>{record.targetType}</span>
-    //       )}
-    //     </div>
-    //   ),
-    // },
     {
       title: '请求信息',
       key: 'request',

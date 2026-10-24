@@ -20,15 +20,13 @@ import { useEffect, useState } from 'react';
 import { FilterOutlined } from '@ant-design/icons';
 import { loginLogList, LoginLogRow, LoginLogSearchType } from '@/service/loginLog.ts';
 import { useDict } from '@/hooks/useDict.ts';
+import { DATE_FORMAT, DICT_TYPE, PAGINATION, RESULT_STATUS } from '@/constants';
 import DictTag from '@/components/DictTag';
 
 const { RangePicker } = DatePicker;
 
-// 登录成功状态值（后端 CHAR(1)：1 成功 0 失败）
-const STATUS_SUCCESS = '1';
-
 const Loginlog: React.FC = () => {
-  const statusOptions = useDict('sys_result_status'); // 状态
+  const statusOptions = useDict(DICT_TYPE.SYS_RESULT_STATUS); // 状态
   const [searchForm] = Form.useForm<LoginLogSearchType>();
 
   // 表格数据
@@ -36,8 +34,8 @@ const Loginlog: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   // 服务端分页
   const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
+    current: PAGINATION.DEFAULT_PAGE_NUM,
+    pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
   });
 
@@ -52,8 +50,8 @@ const Loginlog: React.FC = () => {
     // 登录时间范围转换为后端需要的 startTime / endTime 字符串（按所选时分秒精确传递）
     if (searchValues.loginTime && searchValues.loginTime.length === 2) {
       const [start, end] = searchValues.loginTime;
-      params.startTime = start.format('YYYY-MM-DD HH:mm:ss');
-      params.endTime = end.format('YYYY-MM-DD HH:mm:ss');
+      params.startTime = start.format(DATE_FORMAT.DATE_TIME);
+      params.endTime = end.format(DATE_FORMAT.DATE_TIME);
       delete params.loginTime;
     }
 
@@ -78,18 +76,18 @@ const Loginlog: React.FC = () => {
 
   // 首次加载
   useEffect(() => {
-    void fetchList(1, 10);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   }, []);
 
   // 搜索：回到第一页
   const handleSearch = () => {
-    void fetchList(1, pagination.pageSize);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize);
   };
 
   // 重置：清空筛选条件并重新查询
   const handleResetSearch = () => {
     searchForm.resetFields();
-    void fetchList(1, pagination.pageSize);
+    void fetchList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize);
   };
 
   // 翻页
@@ -144,7 +142,11 @@ const Loginlog: React.FC = () => {
       key: 'message',
       width: 140,
       render: (text: string, record) => (
-        <span className={record.status === STATUS_SUCCESS ? styles.msgSuccess : styles.msgFail}>
+        <span
+          className={
+            record.status === RESULT_STATUS.SUCCESS ? styles.msgSuccess : styles.msgFail
+          }
+        >
           {text}
         </span>
       ),

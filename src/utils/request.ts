@@ -3,21 +3,22 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { message } from 'antd';
 import { Result } from '@/types/request.ts';
 import storage from '@/utils/storage.ts';
+import { HTTP, STORAGE_KEY } from '@/constants';
 
 const service: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 30000,
+  timeout: HTTP.REQUEST_TIMEOUT,
 });
 
 // 请求拦截
 service.interceptors.request.use(
   // token 设置
   (config) => {
-    const token = storage.get('$_token');
+    const token = storage.get(STORAGE_KEY.TOKEN);
     // 登录接口不需要 Token
     if (config.url !== '/auth/login' && token) {
       config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers[HTTP.TOKEN_HEADER] = `${HTTP.TOKEN_PREFIX}${token}`;
     }
     return config;
   },
@@ -30,20 +31,19 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response: AxiosResponse<Result>) => {
     const res = response.data;
-    if (res.code !== 200) {
+    if (res.code !== HTTP.SUCCESS) {
       // 401：未登录 / Token失效
-      if (res.code === 401) {
+      if (res.code === HTTP.UNAUTHORIZED) {
         message.error('登录已失效，请重新登录');
         // 清除 Token
-        storage.remove('$_token');
-        storage.remove('$_user');
-        localStorage.removeItem('token');
+        storage.remove(STORAGE_KEY.TOKEN);
+        storage.remove(STORAGE_KEY.USER);
         // 跳转登录页
         window.location.href = '/login';
         return Promise.reject(res);
       }
       // 403：没有权限
-      if (res.code === 403) {
+      if (res.code === HTTP.FORBIDDEN) {
         message.error(res.message || '没有权限访问该资源');
         return Promise.reject(res);
       }

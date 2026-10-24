@@ -1,0 +1,537 @@
+// Redis 监控页面样式（支持亮色 / 暗色主题切换）
+// 颜色全部使用 theme.less 中定义的 CSS 变量，主题切换时自动跟随变化
+
+.redisPage {
+  padding: 20px;
+  min-height: 100%;
+  background: var(--bg-color);
+
+  .ant-card {
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+  }
+
+  .ant-tag {
+    border-radius: 4px;
+  }
+}
+
+/* ============ 页面头部（优化版） ============ */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 20px 24px;
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #dc442e 0%, #f59e0b 50%, #14b8a6 100%);
+  }
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.headerIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(220, 68, 46, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+  color: #dc442e;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.headerText {
+  .breadcrumb {
+    font-size: 12px;
+    color: var(--text-color-secondary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .title {
+    margin: 0 0 2px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    line-height: 1.3;
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-color-secondary);
+  }
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 5px 12px;
+  height: auto;
+  line-height: 1.5;
+  border-radius: 20px;
+
+  .statusDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #52c41a;
+    box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ============ 服务状态卡片 ============ */
+.serviceStatusCard {
+  margin-bottom: 20px;
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+  overflow: hidden;
+
+  .statusBody {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+  }
+}
+
+.serviceStatusIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 184, 166, 0.1);
+  color: #14b8a6;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+
+.serviceStatusInfo {
+  flex: 1;
+  min-width: 0;
+
+  .serviceStatusRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+
+    .serviceStatusText {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .pongBadge {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 8px;
+      border-radius: 4px;
+      background: rgba(82, 196, 26, 0.1);
+      color: #52c41a;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+    }
+  }
+
+  .serviceInstance {
+    font-size: 13px;
+    color: var(--text-color-secondary);
+  }
+}
+
+.serviceStatusMeta {
+  display: flex;
+  gap: 32px;
+
+  .metaItem {
+    .metaLabel {
+      font-size: 12px;
+      color: var(--text-color-secondary);
+      margin: 0 0 2px;
+    }
+
+    .metaValue {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+  }
+}
+
+/* ============ 指标卡片 ============ */
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.metricCard {
+  .cardBody {
+    padding: 20px;
+  }
+
+  .cardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .metricIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .iconMemory {
+    background: rgba(22, 119, 255, 0.1);
+    color: #1677ff;
+  }
+
+  .iconHit {
+    background: rgba(20, 184, 166, 0.1);
+    color: #14b8a6;
+  }
+
+  .iconConn {
+    background: rgba(124, 58, 237, 0.1);
+    color: #7c3aed;
+  }
+
+  .iconQps {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+  }
+
+  .metricDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #52c41a;
+    box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2);
+  }
+
+  .metricName {
+    font-size: 13px;
+    color: var(--text-color-secondary);
+    margin: 0 0 4px;
+  }
+
+  .metricValue {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+
+    .unit {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-color-secondary);
+      margin-left: 2px;
+    }
+  }
+
+  .metricDetail {
+    font-size: 12px;
+    color: var(--text-color-secondary);
+
+    .trend {
+      color: #52c41a;
+      font-weight: 600;
+    }
+  }
+}
+
+/* ============ 中间布局 ============ */
+.middleLayout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.panelCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+  overflow: hidden;
+
+  .panelBody {
+    padding: 20px;
+  }
+
+  .panelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .panelTitleGroup {
+    .panelTitle {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0;
+    }
+
+    .panelSubtitle {
+      font-size: 12px;
+      color: var(--text-color-secondary);
+      margin: 2px 0 0;
+    }
+  }
+
+  .autoRefresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-color-secondary);
+    padding: 3px 8px;
+    background: var(--search-bg);
+    border-radius: 4px;
+
+    .refreshDot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #52c41a;
+    }
+  }
+}
+
+.chartContainer {
+  width: 100%;
+  height: 280px;
+}
+
+.chartLegend {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+
+  .legendItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-color-secondary);
+
+    .legendDot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+  }
+}
+
+/* ============ 缓存健康度 ============ */
+.healthGauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.healthMetrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  .healthItem {
+    padding: 12px 16px;
+    background: var(--search-bg);
+    border-radius: 8px;
+
+    .healthLabel {
+      font-size: 12px;
+      color: var(--text-color-secondary);
+      margin: 0 0 4px;
+    }
+
+    .healthValue {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-color);
+
+      .healthUnit {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--text-color-secondary);
+        margin-left: 2px;
+      }
+    }
+
+    .healthValueGreen {
+      color: #52c41a;
+    }
+  }
+}
+
+/* ============ 命令统计表格 ============ */
+.cmdCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+  overflow: hidden;
+
+  .cmdCardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .cmdCardBody {
+    padding: 16px 20px 20px;
+  }
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  .cmdSubtitle {
+    font-size: 13px;
+    color: var(--text-color-secondary);
+    margin-top: 2px;
+  }
+}
+
+.cmdName {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 13px;
+}
+
+.barCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barTrack {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--search-bg);
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.barPercent {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
+}
+
+.cmdTime {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.dangerLink {
+  color: #ff4d4f;
+
+  &:hover {
+    color: #d9363e;
+  }
+}
+
+/* ============ 响应式 ============ */
+@media (max-width: 1200px) {
+  .metricGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .middleLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .healthMetrics {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .headerRight {
+    width: 100%;
+  }
+
+  .serviceStatusMeta {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

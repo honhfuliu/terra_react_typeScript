@@ -42,11 +42,12 @@ import * as React from 'react';
 import { FilterOutlined } from '@ant-design/icons';
 import { removeEmptyChildren } from '@/utils/tree.ts';
 import { useDict } from '@/hooks/useDict.ts';
+import { COMMON_STATUS, DICT_TYPE } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 
 const Dept: React.FC = () => {
-  const statusOptions = useDict('sys_status'); // 状态
+  const statusOptions = useDict(DICT_TYPE.SYS_STATUS); // 状态
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
   const [deptTree, setDeptTree] = useState<DeptNode[]>([]);
@@ -443,7 +444,7 @@ const Dept: React.FC = () => {
             <Form
               form={deptForm}
               initialValues={{
-                status: '1',
+                status: COMMON_STATUS.ENABLED,
               }}
             >
               <Row gutter={[16, 16]}>

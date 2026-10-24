@@ -1,0 +1,190 @@
+// 数据库监控页面样式（支持亮色 / 暗色主题切换）
+// 颜色全部使用 theme.less 中定义的 CSS 变量，主题切换时自动跟随变化
+
+.dbPage {
+  padding: 20px;
+  min-height: 100%;
+  background: var(--bg-color);
+
+  .ant-tag { border-radius: 4px; }
+}
+
+/* ============ 页面头部（优化版） ============ */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 20px 24px;
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #1677ff 0%, #7c3aed 50%, #14b8a6 100%);
+  }
+}
+.headerLeft { display: flex; align-items: center; gap: 16px; }
+.headerIcon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #e6f4ff 0%, #d6e4ff 100%);
+  color: #1677ff; font-size: 24px; flex-shrink: 0;
+}
+.headerText {
+  .breadcrumb { font-size: 12px; color: var(--text-color-secondary); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+  .title { margin: 0 0 2px; font-size: 20px; font-weight: 600; color: var(--text-color); line-height: 1.3; }
+  .subtitle { margin: 0; font-size: 13px; color: var(--text-color-secondary); }
+}
+.headerRight { display: flex; align-items: center; gap: 12px; }
+.statusTag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; padding: 5px 12px; height: auto; line-height: 1.5; border-radius: 20px;
+  .statusDot { width: 6px; height: 6px; border-radius: 50%; background: #52c41a; box-shadow: 0 0 0 2px rgba(82,196,26,.2); animation: pulse 2s ease-in-out infinite; }
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+/* ============ 服务状态卡片 ============ */
+.statusCard {
+  margin-bottom: 20px;
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.035);
+  overflow: hidden;
+  .statusBody { display: flex; align-items: center; gap: 20px; padding: 20px 24px; }
+}
+.statusIcon {
+  width: 52px; height: 52px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(20,184,166,.1); color: #14b8a6; font-size: 26px; flex-shrink: 0;
+}
+.statusInfo {
+  flex: 1; min-width: 0;
+  .statusRow { display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+    .statusText { font-size: 16px; font-weight: 600; color: var(--text-color); }
+    .healthyBadge { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 4px; background: rgba(82,196,26,.1); color: #52c41a; font-size: 12px; font-weight: 600; font-family: 'SFMono-Regular', Consolas, monospace; }
+  }
+  .statusInstance { font-size: 13px; color: var(--text-color-secondary); }
+}
+.statusLink { font-size: 13px; }
+
+/* ============ 指标卡片 ============ */
+.metricGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.metricCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.035);
+  overflow: hidden;
+  .cardBody { padding: 20px; }
+  .cardHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .metricIcon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .iconPool { background: rgba(82,196,26,.1); color: #52c41a; }
+  .iconUsage { background: rgba(22,119,255,.1); color: #1677ff; }
+  .iconWait { background: rgba(20,184,166,.1); color: #14b8a6; }
+  .iconSlow { background: rgba(245,158,11,.1); color: #f59e0b; }
+  .metricDot { width: 8px; height: 8px; border-radius: 50%; }
+  .dotGreen { background: #52c41a; box-shadow: 0 0 0 2px rgba(82,196,26,.2); }
+  .dotOrange { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,.2); }
+  .metricName { font-size: 13px; color: var(--text-color-secondary); margin: 0 0 4px; }
+  .metricValue { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 8px; color: var(--text-color);
+    .unit { font-size: 14px; font-weight: 400; color: var(--text-color-secondary); margin-left: 2px; }
+  }
+  .metricValueOrange { color: #f59e0b; }
+  .metricDetail { font-size: 12px; color: var(--text-color-secondary); }
+  .metricBar { margin-top: 8px; }
+}
+
+/* ============ 中间布局 ============ */
+.middleLayout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; margin-bottom: 20px; }
+.panelCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.035);
+  overflow: hidden;
+  .panelBody { padding: 20px; }
+  .panelHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .panelTitle { font-size: 15px; font-weight: 600; color: var(--text-color); margin: 0; }
+  .panelSubtitle { font-size: 12px; color: var(--text-color-secondary); margin: 2px 0 0; }
+}
+
+/* 运行时数据 */
+.runtimeSection { margin-bottom: 20px; }
+.runtimeRow { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-color);
+  &:last-child { border-bottom: none; }
+  .runtimeLabel { font-size: 13px; color: var(--text-color-secondary); }
+  .runtimeValue { font-size: 14px; font-weight: 600; color: var(--text-color); font-family: 'SFMono-Regular', Consolas, monospace; }
+}
+.connBar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin: 12px 0;
+  .connActive { background: #14b8a6; }
+  .connIdle { background: #1677ff; }
+  .connMax { background: var(--search-bg); }
+}
+.connLegend { display: flex; gap: 20px; font-size: 12px; color: var(--text-color-secondary);
+  .legendItem { display: flex; align-items: center; gap: 6px;
+    .legendDot { width: 8px; height: 8px; border-radius: 50%; }
+  }
+}
+
+/* 请求概览 */
+.reqGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px;
+  .reqItem { padding: 12px 16px; background: var(--search-bg); border-radius: 8px;
+    .reqLabel { font-size: 12px; color: var(--text-color-secondary); margin: 0 0 4px; }
+    .reqValue { font-size: 18px; font-weight: 600; color: var(--text-color);
+      .reqUnit { font-size: 13px; font-weight: 400; color: var(--text-color-secondary); margin-left: 2px; }
+    }
+    .reqValueOrange { color: #f59e0b; }
+  }
+}
+
+/* 容量环形图 */
+.capacityChart { width: 100%; height: 220px; }
+.capacityLegend { display: flex; flex-direction: column; gap: 10px; margin-top: 12px;
+  .capItem { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: var(--search-bg); border-radius: 6px;
+    .capLeft { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-color-secondary);
+      .capDot { width: 8px; height: 8px; border-radius: 50%; }
+    }
+    .capRight { font-size: 14px; font-weight: 600; color: var(--text-color); }
+  }
+}
+.healthStatus { text-align: center; margin-top: 16px; padding: 10px; background: rgba(82,196,26,.06); border: 1px solid rgba(82,196,26,.2); border-radius: 8px;
+  .healthLabel { font-size: 12px; color: var(--text-color-secondary); margin: 0 0 2px; }
+  .healthValue { font-size: 16px; font-weight: 600; color: #52c41a; }
+}
+
+/* ============ 配置表格 ============ */
+.configCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.035);
+  overflow: hidden;
+  .configHeader { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-color);
+    .configTitle { font-size: 15px; font-weight: 600; color: var(--text-color); }
+    .configSubtitle { font-size: 13px; color: var(--text-color-secondary); margin-top: 2px; }
+  }
+  .configBody { padding: 16px 20px 20px; }
+}
+.configValue { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; color: var(--text-color); }
+.configName { font-family: 'SFMono-Regular', Consolas, monospace; font-weight: 600; color: var(--text-color); font-size: 13px; }
+
+/* ============ 响应式 ============ */
+@media (max-width: 1200px) {
+  .metricGrid { grid-template-columns: repeat(2, 1fr); }
+  .middleLayout { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .metricGrid { grid-template-columns: 1fr; }
+  .reqGrid { grid-template-columns: 1fr !important; }
+  .pageHeader { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .headerRight { width: 100%; }
+}
