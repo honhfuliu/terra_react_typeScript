@@ -7,12 +7,7 @@ import { setCollapsed } from '@/store/modules/layout.ts';
 import { useDispatch } from 'react-redux';
 import type { MenuProps } from 'antd';
 import logo from '@/assets/images/logo.svg';
-import {
-  HomeOutlined,
-  SettingOutlined,
-  SmileOutlined,
-  UserDeleteOutlined,
-} from '@ant-design/icons';
+import { HomeOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MenuItem } from '@/store/modules/permission.ts';
 
@@ -24,52 +19,6 @@ const Sidebar: React.FC = () => {
   const menus = useSelector((state: RootState) => state.permission.menus); // 获取动态菜单
   const { token } = theme.useToken();
   const dispatch = useDispatch();
-  const items: AntdMenuItem[] = [
-    {
-      key: '/index',
-      label: '首页',
-      icon: <HomeOutlined />,
-    },
-    {
-      key: '/system',
-      label: '系统管理',
-      icon: <SettingOutlined />,
-      children: [
-        {
-          key: '/system/user',
-          label: '用户管理',
-          icon: <UserDeleteOutlined />,
-        },
-        {
-          key: '/system/role',
-          label: '角色管理',
-          icon: <SmileOutlined />,
-        },
-        {
-          key: '/system/coding',
-          label: '全局编码',
-          icon: <SmileOutlined />,
-        },
-      ],
-    },
-    {
-      key: '/system1',
-      label: '系统管理',
-      icon: <SettingOutlined />,
-      children: [
-        {
-          key: '/system/use1r',
-          label: '用户管理',
-          icon: <UserDeleteOutlined />,
-        },
-        {
-          key: '/system/role1',
-          label: '角色管理',
-          icon: <SmileOutlined />,
-        },
-      ],
-    },
-  ];
 
   // 类型转换
   const convertMenuItems = (menus: MenuItem[]): AntdMenuItem[] => {
