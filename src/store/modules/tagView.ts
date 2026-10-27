@@ -1,4 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { STORAGE_KEY } from '@/constants';
+import storage from '@/utils/storage.ts';
 
 // 标签页接口定义
 export interface TagView {
@@ -15,7 +17,7 @@ interface TagViewState {
 
 // 初始状态
 const initialState: TagViewState = {
-  visitedViews: [],
+  visitedViews: storage.getSession<TagView[]>(STORAGE_KEY.TAG_VIEWS) ?? [],
 };
 
 // 创建标签页
@@ -68,11 +70,23 @@ const tagViewSlice = createSlice({
 
     // 关闭所有非固定 Tab
     delAllViews(state) {
+      state.visitedViews = state.visitedViews.filter((item) => !item.closable);
+    },
+
+    // 退出登录时彻底清空所有标签
+    resetViews(state) {
       state.visitedViews = [];
     },
   },
 });
-export const { addView, delView, delOthersViews, delLeftViews, delRightViews, delAllViews } =
-  tagViewSlice.actions;
+export const {
+  addView,
+  delView,
+  delOthersViews,
+  delLeftViews,
+  delRightViews,
+  delAllViews,
+  resetViews,
+} = tagViewSlice.actions;
 
 export default tagViewSlice.reducer;

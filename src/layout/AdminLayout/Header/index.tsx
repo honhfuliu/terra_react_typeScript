@@ -23,6 +23,7 @@ import { STORAGE_KEY } from '@/constants';
 import Search from '@/layout/AdminLayout/Header/Search';
 import GERENZHONGXIN from '@/assets/svgs/GERENZHONGXIN.svg?react';
 import Exit from '@/assets/svgs/Exit.svg?react';
+import { resetViews } from '@/store/modules/tagView.ts';
 
 const { Header: AntdHeader } = Layout;
 const Header: React.FC = () => {
@@ -52,6 +53,9 @@ const Header: React.FC = () => {
         storage.remove(STORAGE_KEY.USER);
         // 重置权限 / 动态路由数据，避免下个账号看到残留数据
         dispatch(clearPermission());
+        // 重置标签页数据
+        dispatch(resetViews());
+        storage.removeSession(STORAGE_KEY.TAG_VIEWS);
         message.success('已退出登录');
         navigate('/login');
       },

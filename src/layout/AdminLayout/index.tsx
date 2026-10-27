@@ -5,16 +5,20 @@ import Sidebar from '@/layout/AdminLayout/Sidebar';
 import TagsView from '@/layout/AdminLayout/TagsView';
 import Main from '@/layout/AdminLayout/Main';
 import { Layout } from 'antd';
+import { KeepAliveProvider } from '@/keepalive/KeepAliveContext.tsx';
+
 const AdminLayout: React.FC = () => {
   return (
-    <Layout className={styles.layout}>
-      <Sidebar />
-      <Layout>
-        <Header />
-        <TagsView />
-        <Main />
+    <KeepAliveProvider>
+      <Layout className={styles.layout}>
+        <Sidebar />
+        <Layout>
+          <Header />
+          <TagsView />
+          <Main />
+        </Layout>
       </Layout>
-    </Layout>
+    </KeepAliveProvider>
   );
 };
 export default AdminLayout;

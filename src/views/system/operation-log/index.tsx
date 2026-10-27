@@ -74,7 +74,6 @@ const OperationLog: React.FC = () => {
     pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
   });
-
   // 详情弹窗
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailRecord, setDetailRecord] = useState<OperationLogRow | null>(null);

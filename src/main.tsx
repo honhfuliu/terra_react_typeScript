@@ -1,4 +1,3 @@
-import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@/assets/styles/index.less';
 import { store } from '@/store';
@@ -16,18 +15,18 @@ async function bootstrap() {
   }
   // await initPermission();
   createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <Provider store={store}>
-        <BrowserRouter
-          future={{
-            v7_startTransition: false,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <AppProvider />
-        </BrowserRouter>
-      </Provider>
-    </StrictMode>,
+    // <StrictMode>
+    <Provider store={store}>
+      <BrowserRouter
+        future={{
+          v7_startTransition: false,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <AppProvider />
+      </BrowserRouter>
+    </Provider>,
+    // </StrictMode>,
   );
 }
-bootstrap();
+void bootstrap();

@@ -1,7 +1,7 @@
 import { RouteObject } from 'react-router-dom';
 import * as React from 'react';
 
-type Meta = {
+export type Meta = {
   title: string;
   icon?: string;
   hidden?: boolean;

@@ -15,6 +15,7 @@ import {
 } from '@/store/modules/tagView';
 import { getHomePath } from '@/router/helper';
 import { ReloadOutlined } from '@ant-design/icons';
+import { usePageKeepAlive } from '@/keepalive/KeepAliveContext';
 
 // 查找当前路由对应的标题和缓存配置
 interface RouteInfo {
@@ -33,6 +34,7 @@ const normalizePath = (parentPath: string, path?: string): string => {
   return `${parent}/${path}`.replace(/\/+/g, '/');
 };
 
+// 根据路径查找路由信息
 const findRouteInfo = (
   route: AppRoute | undefined,
   pathname: string,
@@ -89,13 +91,25 @@ const TagsView: React.FC = () => {
 
   const visitedViews = useSelector((state: RootState) => state.tagViews.visitedViews);
 
-  const currentPath = location.pathname + location.search;
+  const currentPath = location.pathname;
 
   // 根据当前角色可访问的路由，计算动态首页
   const homePath = React.useMemo(() => getHomePath(routes), [routes]);
 
+  // 获取 keepAlive 维护的 ref
+  const { aliveRef } = usePageKeepAlive();
+
+  // 清理页面缓存
+  const clearViewCache = async (views: typeof visitedViews) => {
+    const cacheKeys = views.filter((view) => view.keepAlive).map((view) => view.path);
+
+    if (cacheKeys.length > 0) {
+      await aliveRef.current?.destroy(cacheKeys);
+    }
+  };
+
   // 关闭 Tab 页
-  const handleClose = (targetPath: string) => {
+  const handleClose = async (targetPath: string) => {
     const targetView = visitedViews.find((view) => view.path === targetPath);
 
     // Tab 不存在或不允许关闭时，不执行操作
@@ -123,6 +137,10 @@ const TagsView: React.FC = () => {
         navigate(homePath, { replace: true });
       }
     }
+    // 清理当前页面的缓存
+    if (targetView.keepAlive) {
+      await aliveRef.current?.destroy(targetPath);
+    }
     dispatch(delView(targetPath));
   };
 
@@ -132,29 +150,45 @@ const TagsView: React.FC = () => {
     if (targetIndex === -1) return;
     switch (key) {
       case 'refresh':
-        // 刷新当前浏览器页面，会重新加载整个应用
-        navigate(0);
+        // 刷新当前标签页
+        aliveRef.current?.refresh(currentPath);
         break;
       case 'close':
-        handleClose(targetPath);
+        void handleClose(targetPath);
         break;
-      case 'closeOthers':
+      case 'closeOthers': {
+        const removedViews = visitedViews.filter(
+          (view) => view.path !== targetPath && view.closable,
+        );
         // 让右键选中的标签成为当前标签
         if (currentPath !== targetPath) {
           navigate(targetPath);
         }
+        void clearViewCache(removedViews);
         dispatch(delOthersViews(targetPath));
         break;
-      case 'closeLeft':
+      }
+      case 'closeLeft': {
+        const removedViews = visitedViews.slice(0, targetIndex).filter((view) => view.closable);
+        void clearViewCache(removedViews);
         dispatch(delLeftViews(targetPath));
         break;
-      case 'closeRight':
+      }
+      case 'closeRight': {
+        const removedViews = visitedViews.slice(targetIndex + 1).filter((view) => view.closable);
+        void clearViewCache(removedViews);
         dispatch(delRightViews(targetPath));
         break;
-      case 'closeAll':
+      }
+      case 'closeAll': {
+        // 关闭全部时保留首页：首页不纳入待关闭集合，也不销毁其缓存，
+        // 否则在首页上操作时 activeCacheKey 不变而缓存节点被销毁，会导致首页空白
+        const removedViews = visitedViews.filter((view) => view.closable && view.path !== homePath);
+        void clearViewCache(removedViews);
         dispatch(delAllViews());
         navigate(homePath, { replace: true });
         break;
+      }
       default:
         break;
     }
@@ -162,21 +196,28 @@ const TagsView: React.FC = () => {
 
   React.useEffect(() => {
     if (!routes) return;
-
     const routeInfo = findRouteInfo(routes as AppRoute, location.pathname);
-
     if (!routeInfo?.title) return;
-
     dispatch(
       addView({
         path: currentPath,
         title: routeInfo.title,
-        closable: true,
+        closable: currentPath !== homePath,
         keepAlive: routeInfo.keepAlive ?? false,
       }),
     );
-  }, [routes, location.pathname, currentPath, dispatch]);
+  }, [routes, location.pathname, currentPath, dispatch, homePath]);
 
+  // React.useEffect(() => {
+  //   console.log('[TagsView] 路由变化:', location.pathname);
+  // }, [location.pathname]);
+  //
+  // React.useEffect(() => {
+  //   console.log(
+  //     '[TagsView] 标签列表变化:',
+  //     visitedViews.map((view) => view.path),
+  //   );
+  // }, [visitedViews]);
   return (
     <div className={styles.tagsView}>
       <Tabs
@@ -186,7 +227,7 @@ const TagsView: React.FC = () => {
         onChange={(key) => navigate(key)}
         onEdit={(targetKey, action) => {
           if (action === 'remove') {
-            handleClose(String(targetKey));
+            void handleClose(String(targetKey));
           }
         }}
         items={visitedViews.map((view) => {
@@ -236,7 +277,12 @@ const TagsView: React.FC = () => {
                 trigger={['contextMenu']}
                 menu={{
                   items: menuItems,
-                  onClick: ({ key }) => handleContextMenuClick(key, view.path),
+                  onClick: ({ key, domEvent }) => {
+                    // 阻止菜单项点击事件沿 React 组件树冒泡到 Tabs 标签，
+                    // 否则会误触发标签的 onChange 导航，覆盖菜单里的跳转逻辑
+                    domEvent.stopPropagation();
+                    handleContextMenuClick(key, view.path);
+                  },
                 }}
               >
                 <span>{view.title}</span>
