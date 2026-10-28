@@ -19,8 +19,6 @@ const HomeNavigate: React.FC = () => {
 // 统一渲染组件
 const Element = (route: AppRoute) => {
   const { component: Component, path } = route;
-  const matches = useMatches();
-  console.log('matches', matches);
   const token = isLogin();
   // login 页面放行
   if (path === '/login') {
@@ -57,7 +55,7 @@ const createRoute = (routers: AppRoute[]) => {
         }
         return (
           <Route path={path} key={index} element={<Element {...route} />}>
-            {Array.isArray(children) ? createRoute(children) : null}
+            {Array.isArray(children) ? createRoute(children) : undefined}
           </Route>
         );
       })}
