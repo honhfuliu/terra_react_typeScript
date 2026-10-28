@@ -13,74 +13,9 @@ import {
   delRightViews,
   delAllViews,
 } from '@/store/modules/tagView';
-import { getHomePath } from '@/router/helper';
+import { getHomePath, findRouteChain } from '@/router/helper';
 import { ReloadOutlined } from '@ant-design/icons';
 import { usePageKeepAlive } from '@/keepalive/KeepAliveContext';
-
-// 查找当前路由对应的标题和缓存配置
-interface RouteInfo {
-  title?: string;
-  keepAlive?: boolean;
-}
-
-const normalizePath = (parentPath: string, path?: string): string => {
-  if (!path) return parentPath || '/';
-
-  if (path.startsWith('/')) {
-    return path.replace(/\/+$/, '') || '/';
-  }
-
-  const parent = parentPath.replace(/\/+$/, '');
-  return `${parent}/${path}`.replace(/\/+/g, '/');
-};
-
-// 根据路径查找路由信息
-const findRouteInfo = (
-  route: AppRoute | undefined,
-  pathname: string,
-  parentPath = '',
-): RouteInfo | undefined => {
-  if (!route) return undefined;
-
-  const currentPath = normalizePath(parentPath, route.path);
-
-  // 优先查找更深层的子路由
-  if (Array.isArray(route.children)) {
-    for (const child of route.children) {
-      const info = findRouteInfo(child, pathname, currentPath);
-      if (info) return info;
-    }
-  }
-
-  // 精确匹配当前路由，支持动态参数
-  if (route.path && !route.index && !route.redirect) {
-    const pattern = currentPath
-      .split('/')
-      .map((segment) => {
-        if (segment.startsWith(':')) return segment;
-        return segment;
-      })
-      .join('/');
-
-    const segments = pattern.split('/');
-    const pathSegments = pathname.split('/');
-
-    const matched =
-      segments.length === pathSegments.length &&
-      segments.every((segment, index) => {
-        return segment.startsWith(':') || segment === pathSegments[index];
-      });
-
-    if (matched && route.meta?.title) {
-      return {
-        title: route.meta.title,
-        keepAlive: route.meta.keepAlive,
-      };
-    }
-  }
-
-  return undefined;
-};
 
 const TagsView: React.FC = () => {
   const location = useLocation();
@@ -196,7 +131,8 @@ const TagsView: React.FC = () => {
 
   React.useEffect(() => {
     if (!routes) return;
-    const routeInfo = findRouteInfo(routes as AppRoute, location.pathname);
+    const chain = findRouteChain([routes as AppRoute], location.pathname);
+    const routeInfo = chain[chain.length - 1];
     if (!routeInfo?.title) return;
     dispatch(
       addView({

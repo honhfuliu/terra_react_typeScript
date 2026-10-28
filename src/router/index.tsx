@@ -1,5 +1,5 @@
 import { AppRoute } from '@/types/route.ts';
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useMatches } from 'react-router-dom';
 import { Suspense, useMemo } from 'react';
 import Loading from '@/components/Loading';
 import { useSelector } from 'react-redux';
@@ -19,6 +19,8 @@ const HomeNavigate: React.FC = () => {
 // 统一渲染组件
 const Element = (route: AppRoute) => {
   const { component: Component, path } = route;
+  const matches = useMatches();
+  console.log('matches', matches);
   const token = isLogin();
   // login 页面放行
   if (path === '/login') {

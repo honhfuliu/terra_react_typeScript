@@ -24,7 +24,7 @@ export function transformRoutes(route: AppRoute, homePath = '/403'): AppRoute {
     });
   }
   if (route.children?.length) {
-    result.children = route.children.map((child) => transformRoutes(child));
+    result.children = route.children.map((child) => transformRoutes(child, homePath));
   }
   return result;
 }

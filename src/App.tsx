@@ -3,9 +3,7 @@ import RouterView from '@/router';
 
 const App: React.FC = () => {
   return (
-    // <BrowserRouter>
     <RouterView />
-    // </BrowserRouter>
   );
 };
 

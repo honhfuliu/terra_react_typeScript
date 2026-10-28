@@ -13,10 +13,11 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { setTheme, toggleCollapsed } from '@/store/modules/layout.ts';
 import { clearPermission } from '@/store/modules/permission.ts';
 import { RootState } from '@/store';
+import { getHomePath, findRouteChain } from '@/router/helper';
 import { logout } from '@/service/auto.ts';
 import storage from '@/utils/storage.ts';
 import { STORAGE_KEY } from '@/constants';
@@ -26,12 +27,32 @@ import Exit from '@/assets/svgs/Exit.svg?react';
 import { resetViews } from '@/store/modules/tagView.ts';
 
 const { Header: AntdHeader } = Layout;
+
 const Header: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { modal, message } = App.useApp();
   const collapsed = useSelector((state: RootState) => state.layout.collapsed);
   const themeMode = useSelector((state: RootState) => state.layout.theme);
+  const routes = useSelector((state: RootState) => state.permission.routes);
+  const homePath = React.useMemo(() => getHomePath(routes), [routes]);
+
+  // 根据当前路由地址生成面包屑：首项固定为「首页」（可点击跳首页），
+  // 后续为路由树中匹配当前 pathname 的各层标题（自动跳过与首页重复的项）
+  const breadcrumbItems = React.useMemo(() => {
+    const items: { title: React.ReactNode }[] = [
+      { title: <a onClick={() => navigate(homePath)}>首页</a> },
+    ];
+    if (!routes) return items;
+    const crumbs = findRouteChain([routes], location.pathname);
+    for (const crumb of crumbs) {
+      // 跳过无标题的布局/目录节点，以及重复的首页
+      if (!crumb.title || crumb.path === homePath) continue;
+      items.push({ title: crumb.title });
+    }
+    return items;
+  }, [routes, location.pathname, homePath, navigate]);
   // 切换主题
   const switchTheme = () => {
     dispatch(setTheme(themeMode === 'dark' ? 'light' : 'dark'));
@@ -110,13 +131,7 @@ const Header: React.FC = () => {
               }}
             ></Button>
           </div>
-          <div>
-            {screens.lg && (
-              <Breadcrumb
-                items={[{ title: '首页' }, { title: '系统管理' }, { title: '菜单管理' }]}
-              />
-            )}
-          </div>
+          <div>{screens.lg && <Breadcrumb items={breadcrumbItems} />}</div>
         </div>
         <div className={styles.right}>
           <Space size={'large'}>
