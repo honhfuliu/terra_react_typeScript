@@ -1,4 +1,3 @@
-import { RouteObject } from 'react-router-dom';
 import * as React from 'react';
 
 export type Meta = {
@@ -10,7 +9,9 @@ export type Meta = {
 /*
  * 路由类型定义
  * */
-export type AppRoute = RouteObject & {
+export type AppRoute = {
+  path?: string;
+  index?: boolean;
   name?: string;
   children?: AppRoute[];
   component?: React.ComponentType | string;

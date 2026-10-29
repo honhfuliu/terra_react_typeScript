@@ -78,7 +78,8 @@ const Header: React.FC = () => {
         dispatch(resetViews());
         storage.removeSession(STORAGE_KEY.TAG_VIEWS);
         message.success('已退出登录');
-        navigate('/login');
+        // 整页跳转，避免 clearPermission 重建 router 与旧 navigate 的时序冲突
+        window.location.replace('/login');
       },
     });
   };

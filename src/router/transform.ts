@@ -4,6 +4,8 @@ import { AppRoute } from '@/types/route.ts';
 import { lazy } from 'react';
 import * as React from 'react';
 import { MenuItem } from '@/store/modules/permission.ts';
+import { RouteObject } from 'react-router-dom';
+import { Element } from '@/router/element.tsx';
 
 // 路由转换
 // homePath: 根路由默认 index 重定向地址（登录后/刷新默认进入的第一个可访问页面）
@@ -63,4 +65,42 @@ export function transformMenus(routes: AppRoute[], parentPath = ''): MenuItem[] 
       }
       return menu;
     });
+}
+
+// 把 AppRoute 转换为 React Router 数据路由（RouteObject）
+// 注意：传入的 component 需已由 transformRoutes 转成 React 组件
+export function createRouteObjects(routes: AppRoute[]): RouteObject[] {
+  return routes.map((route): RouteObject => {
+    const children = route.children ? createRouteObjects(route.children) : undefined;
+
+    // 每个匹配节点的业务元信息交给 handle，方便 useMatches 读取（面包屑等）
+    const handle = route.meta
+      ? { ...route.meta, name: route.name }
+      : route.name
+        ? { name: route.name }
+        : undefined;
+
+    const element = React.createElement(Element, { route });
+
+    // index 路由（前端补的默认重定向），单独构造以匹配 IndexRouteObject 类型
+    if (route.index) {
+      return { index: true, element } as RouteObject;
+    }
+
+    const result: RouteObject = {
+      handle,
+      // 统一由 Element 处理鉴权、redirect 与组件渲染
+      element,
+    };
+
+    if (route.path !== undefined) {
+      result.path = route.path;
+    }
+
+    if (children?.length) {
+      result.children = children;
+    }
+
+    return result;
+  });
 }

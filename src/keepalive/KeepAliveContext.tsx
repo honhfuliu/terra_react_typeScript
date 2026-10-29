@@ -3,7 +3,7 @@ import { useKeepAliveRef, type KeepAliveRef } from 'keepalive-for-react';
 
 // 定义 KeepAliveContext 的值类型
 type KeepAliveContextValue = {
-  aliveRef: RefObject<KeepAliveRef | undefined>;
+  aliveRef: RefObject<KeepAliveRef | null>;
 };
 
 // 创建 KeepAliveContext
