@@ -1,4 +1,4 @@
-import * as React from 'react';
+import type { ReactElement } from 'react';
 import { DictDataOption } from '@/service/dict.ts';
 import { Tag } from 'antd';
 
@@ -7,7 +7,7 @@ interface DictTagProps {
   option: DictDataOption[];
 }
 
-const DictTag: React.FC<DictTagProps> = (props) => {
+const DictTag = (props: DictTagProps): ReactElement => {
   if (!props.value) {
     return <Tag>-</Tag>;
   }

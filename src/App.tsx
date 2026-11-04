@@ -1,12 +1,8 @@
 import * as React from 'react';
-import RouterView from '@/router';
+import DataRouterProvider from '@/router/dataRouter';
 
 const App: React.FC = () => {
-  return (
-    // <BrowserRouter>
-    <RouterView />
-    // </BrowserRouter>
-  );
+  return <DataRouterProvider />;
 };
 
 export default App;

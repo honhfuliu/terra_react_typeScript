@@ -281,7 +281,7 @@ const Menu: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    getMenuList();
+    void getMenuList();
   }, [getMenuList]);
 
   const handleOk = async () => {
@@ -369,11 +369,7 @@ const Menu: React.FC = () => {
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} lg={8} xl={7}>
-                <Form.Item<MenuSearchType>
-                  label={'状态'}
-                  name="status"
-                  style={{ marginBottom: 0 }}
-                >
+                <Form.Item<MenuSearchType> label={'状态'} name="status" style={{ marginBottom: 0 }}>
                   <Select
                     placeholder={'菜单状态'}
                     allowClear

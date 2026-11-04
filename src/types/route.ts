@@ -1,7 +1,6 @@
-import { RouteObject } from 'react-router-dom';
 import * as React from 'react';
 
-type Meta = {
+export type Meta = {
   title: string;
   icon?: string;
   hidden?: boolean;
@@ -10,10 +9,21 @@ type Meta = {
 /*
  * 路由类型定义
  * */
-export type AppRoute = RouteObject & {
+export type AppRoute = {
+  path?: string;
+  index?: boolean;
   name?: string;
   children?: AppRoute[];
   component?: React.ComponentType | string;
   meta?: Meta;
   redirect?: string;
+};
+
+/**
+ * 路由搜索项
+ */
+export type RouteSearchItem = {
+  icon?: string;
+  title: string;
+  path: string;
 };

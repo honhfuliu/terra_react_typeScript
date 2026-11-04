@@ -22,6 +22,7 @@ import { loginLogList, LoginLogRow, LoginLogSearchType } from '@/service/loginLo
 import { useDict } from '@/hooks/useDict.ts';
 import { DATE_FORMAT, DICT_TYPE, PAGINATION, RESULT_STATUS } from '@/constants';
 import DictTag from '@/components/DictTag';
+import { PaginationState } from '@/types/common.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -33,7 +34,7 @@ const Loginlog: React.FC = () => {
   const [dataList, setDataList] = useState<LoginLogRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   // 服务端分页
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationState>({
     current: PAGINATION.DEFAULT_PAGE_NUM,
     pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
@@ -143,9 +144,7 @@ const Loginlog: React.FC = () => {
       width: 140,
       render: (text: string, record) => (
         <span
-          className={
-            record.status === RESULT_STATUS.SUCCESS ? styles.msgSuccess : styles.msgFail
-          }
+          className={record.status === RESULT_STATUS.SUCCESS ? styles.msgSuccess : styles.msgFail}
         >
           {text}
         </span>

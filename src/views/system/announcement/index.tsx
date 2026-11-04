@@ -49,17 +49,12 @@ import {
   NoticeRow,
 } from '@/service/notice.ts';
 import { useDict } from '@/hooks/useDict.ts';
-import {
-  COMMON_STATUS,
-  DATE_FORMAT,
-  DICT_TYPE,
-  NOTICE_STATUS,
-  PAGINATION,
-} from '@/constants';
+import { COMMON_STATUS, DATE_FORMAT, DICT_TYPE, NOTICE_STATUS, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { PaginationState } from '@/types/common.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -94,7 +89,7 @@ const Announcement: React.FC = () => {
   const [dataList, setDataList] = useState<NoticeRow[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   // 服务端分页
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationState>({
     current: PAGINATION.DEFAULT_PAGE_NUM,
     pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
@@ -364,8 +359,7 @@ const Announcement: React.FC = () => {
     if (
       hasEditPerm &&
       record.isTop !== COMMON_STATUS.ENABLED &&
-      (record.status === NOTICE_STATUS.DRAFT ||
-        record.status === NOTICE_STATUS.PUBLISHED)
+      (record.status === NOTICE_STATUS.DRAFT || record.status === NOTICE_STATUS.PUBLISHED)
     ) {
       items.push({ key: 'top', icon: <PushpinOutlined />, label: '置顶' });
     }
@@ -407,9 +401,7 @@ const Announcement: React.FC = () => {
         <div className={styles.titleCell}>
           <div className={styles.titleLine}>
             <span className={styles.annTitle}>{record.title}</span>
-            {record.isTop === COMMON_STATUS.ENABLED && (
-              <span className={styles.topTag}>置顶</span>
-            )}
+            {record.isTop === COMMON_STATUS.ENABLED && <span className={styles.topTag}>置顶</span>}
           </div>
           <span className={styles.annSummary}>{record.summary}</span>
         </div>
@@ -483,7 +475,7 @@ const Announcement: React.FC = () => {
                 编辑
               </Button>
             </Auth>
-            {moreMenuItems.length > 0 && (
+            {moreMenuItems && moreMenuItems.length > 0 && (
               <Dropdown
                 trigger={['click']}
                 open={moreOpenId === record.id}

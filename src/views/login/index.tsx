@@ -7,7 +7,6 @@ import Loading from '@/components/Loading';
 import storage from '@/utils/storage.ts';
 import { STORAGE_KEY } from '@/constants';
 import { initPermission } from '@/permission';
-import { useNavigate } from 'react-router-dom';
 import { store } from '@/store';
 import { getHomePath } from '@/router/helper.ts';
 import { useEffect, useState } from 'react';
@@ -24,8 +23,6 @@ const Login: React.FC = () => {
   const onChange: CheckboxProps['onChange'] = (e) => {
     console.log(`checked = ${e.target.checked}`);
   };
-  const navigate = useNavigate();
-
   // 获取图形验证码
   const fetchCaptcha = async () => {
     setCaptchaLoading(true);
@@ -40,7 +37,7 @@ const Login: React.FC = () => {
 
   // 页面加载时获取验证码
   useEffect(() => {
-    fetchCaptcha();
+    void fetchCaptcha();
   }, []);
 
   // 登录表单效验
@@ -56,6 +53,7 @@ const Login: React.FC = () => {
     }
     try {
       const result = await login({ ...values, uuid: captchaUuid });
+      console.log('result', result);
       if (result) {
         storage.set(STORAGE_KEY.TOKEN, result.token);
         const userInfo = {
@@ -68,7 +66,8 @@ const Login: React.FC = () => {
         // 无权限的页面后端不会下发，因此不会出现登录后跳转到无权限页面的情况
         const { routes } = store.getState().permission;
         const homePath = getHomePath(routes);
-        navigate(homePath);
+        // 方案 A：整页跳转，重新 bootstrap 并基于最新权限重建数据路由
+        window.location.replace(homePath);
       } else {
         // 登录失败（含验证码错误）：清空验证码并刷新一张新的
         form.setFieldValue('code', '');

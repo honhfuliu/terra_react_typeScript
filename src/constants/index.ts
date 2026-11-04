@@ -4,6 +4,7 @@ export const STORAGE_KEY = {
   USER: '$_user', // 用户信息
   THEME: 'theme', // 主题
   DICT_CACHE_PREFIX: 'dict_', // 字典缓存 key 前缀（dict_ + 字典编码）
+  TAG_VIEWS: 'terra_tag_views',
 } as const;
 
 // ==================== 字典编码（后端 dict_type）====================

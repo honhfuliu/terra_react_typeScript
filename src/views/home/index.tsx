@@ -1,7 +1,5 @@
 import * as React from 'react';
 import { Table } from 'antd';
-import { useEffect } from 'react';
-import { getRouters } from '@/service/router.ts';
 
 const Home: React.FC = () => {
   const columns = [

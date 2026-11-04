@@ -17,5 +17,25 @@ const storage = {
   remove(key: string) {
     localStorage.removeItem(key);
   },
+
+  // 新增 Session 存储
+  setSession<T>(key: string, value: T) {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  },
+
+  getSession<T>(key: string): T | null {
+    const value = sessionStorage.getItem(key);
+    if (!value) return null;
+
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return value as unknown as T;
+    }
+  },
+
+  removeSession(key: string) {
+    sessionStorage.removeItem(key);
+  },
 };
 export default storage;

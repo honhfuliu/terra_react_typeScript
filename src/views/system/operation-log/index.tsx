@@ -35,6 +35,7 @@ import { useDict } from '@/hooks/useDict.ts';
 import { DATE_FORMAT, DICT_TYPE, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import JsonViewer from '@/components/JsonViewer';
+import { PaginationState } from '@/types/common.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -68,12 +69,11 @@ const OperationLog: React.FC = () => {
   // 批量删除 loading
   const [deleting, setDeleting] = useState<boolean>(false);
   // 服务端分页
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationState>({
     current: PAGINATION.DEFAULT_PAGE_NUM,
     pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
   });
-
   // 详情弹窗
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailRecord, setDetailRecord] = useState<OperationLogRow | null>(null);
@@ -207,7 +207,6 @@ const OperationLog: React.FC = () => {
     // number / boolean / null
     return value;
   };
-
 
   // 请求方法标签样式
   const methodClassName = (method: string) => {

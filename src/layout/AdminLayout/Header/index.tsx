@@ -5,6 +5,7 @@ import { App, Avatar, Breadcrumb, Button, Dropdown, Layout, MenuProps, Space, Gr
 import {
   BellOutlined,
   FullscreenOutlined,
+  FullscreenExitOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MoonOutlined,
@@ -13,7 +14,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { UIMatch, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { setTheme, toggleCollapsed } from '@/store/modules/layout.ts';
 import { clearPermission } from '@/store/modules/permission.ts';
 import { RootState } from '@/store';
@@ -23,14 +24,45 @@ import { STORAGE_KEY } from '@/constants';
 import Search from '@/layout/AdminLayout/Header/Search';
 import GERENZHONGXIN from '@/assets/svgs/GERENZHONGXIN.svg?react';
 import Exit from '@/assets/svgs/Exit.svg?react';
+import { resetViews } from '@/store/modules/tagView.ts';
+import useFullscreen from '@/hooks/useFullscreen';
+import { Meta } from '@/types/route.ts';
 
 const { Header: AntdHeader } = Layout;
+
 const Header: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { modal, message } = App.useApp();
   const collapsed = useSelector((state: RootState) => state.layout.collapsed);
   const themeMode = useSelector((state: RootState) => state.layout.theme);
+
+  // 全屏
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const matches = useMatches() as UIMatch<unknown, Meta>[];
+  console.log('matches', matches);
+  // 获取当前匹配路由的标题
+  const breadcrumbItem = React.useMemo(() => {
+    const routeItems = matches
+      .map((match) => {
+        const handle = match.handle;
+
+        if (!handle?.title || handle.hidden) {
+          return null;
+        }
+
+        return {
+          title: handle.title,
+        };
+      })
+      .filter((item) => item !== null);
+
+    const isHome = location.pathname === '/index';
+
+    return isHome ? routeItems : [{ title: '首页' }, ...routeItems];
+  }, [matches, location.pathname]);
+
   // 切换主题
   const switchTheme = () => {
     dispatch(setTheme(themeMode === 'dark' ? 'light' : 'dark'));
@@ -52,8 +84,12 @@ const Header: React.FC = () => {
         storage.remove(STORAGE_KEY.USER);
         // 重置权限 / 动态路由数据，避免下个账号看到残留数据
         dispatch(clearPermission());
+        // 重置标签页数据
+        dispatch(resetViews());
+        storage.removeSession(STORAGE_KEY.TAG_VIEWS);
         message.success('已退出登录');
-        navigate('/login');
+        // 整页跳转，避免 clearPermission 重建 router 与旧 navigate 的时序冲突
+        window.location.replace('/login');
       },
     });
   };
@@ -106,13 +142,7 @@ const Header: React.FC = () => {
               }}
             ></Button>
           </div>
-          <div>
-            {screens.lg && (
-              <Breadcrumb
-                items={[{ title: '首页' }, { title: '系统管理' }, { title: '菜单管理' }]}
-              />
-            )}
-          </div>
+          <div>{screens.lg && <Breadcrumb items={breadcrumbItem} />}</div>
         </div>
         <div className={styles.right}>
           <Space size={'large'}>
@@ -139,7 +169,17 @@ const Header: React.FC = () => {
               )}
             </div>
             <div>
-              <FullscreenOutlined style={{ fontSize: 16, cursor: 'pointer' }} />
+              {isFullscreen ? (
+                <FullscreenExitOutlined
+                  style={{ fontSize: 16, cursor: 'pointer' }}
+                  onClick={toggleFullscreen}
+                />
+              ) : (
+                <FullscreenOutlined
+                  style={{ fontSize: 16, cursor: 'pointer' }}
+                  onClick={toggleFullscreen}
+                />
+              )}
             </div>
             <div>
               <BellOutlined style={{ fontSize: 16, cursor: 'pointer' }} />

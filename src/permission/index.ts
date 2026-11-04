@@ -24,5 +24,6 @@ export async function initPermission() {
     }
   } catch (e) {
     console.error(e);
+    throw e;
   }
 }

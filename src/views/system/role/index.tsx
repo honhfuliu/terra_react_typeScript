@@ -47,6 +47,7 @@ import { COMMON_STATUS, DATE_FORMAT, DICT_TYPE, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { FilterOutlined } from '@ant-design/icons';
+import { PaginationState } from '@/types/common.ts';
 
 // 菜单树转换（Tree key = menuId）
 const convertMenuTree = (data: MenuNode[]): TreeDataNode[] => {
@@ -134,7 +135,7 @@ const Role: React.FC = () => {
   // 查询表单数据
   const [searchForm] = Form.useForm<RoleSearchType>();
   const [roleData, setRoleDate] = useState<RoleRow[]>([]);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationState>({
     current: PAGINATION.DEFAULT_PAGE_NUM,
     pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
     total: 0,
@@ -444,11 +445,7 @@ const Role: React.FC = () => {
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} lg={8} xl={4}>
-                <Form.Item<RoleSearchType>
-                  label={'状态'}
-                  name="status"
-                  style={{ marginBottom: 0 }}
-                >
+                <Form.Item<RoleSearchType> label={'状态'} name="status" style={{ marginBottom: 0 }}>
                   <Select
                     placeholder={'角色状态'}
                     allowClear
