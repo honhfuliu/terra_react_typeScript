@@ -18,3 +18,12 @@ export type AppRoute = {
   meta?: Meta;
   redirect?: string;
 };
+
+/**
+ * 路由搜索项
+ */
+export type RouteSearchItem = {
+  icon?: string;
+  title: string;
+  path: string;
+};

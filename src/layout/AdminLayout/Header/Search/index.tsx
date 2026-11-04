@@ -1,60 +1,82 @@
 import * as React from 'react';
 import styles from './index.module.less';
 import { Grid, Input, Modal, Divider } from 'antd';
-import {
-  SearchOutlined,
-  DashboardOutlined,
-  UserOutlined,
-  TeamOutlined,
-  SettingOutlined,
-  FileTextOutlined,
-  ProfileOutlined,
-  MonitorOutlined,
-  LogoutOutlined,
-  SafetyCertificateOutlined,
-  BellOutlined,
-  ApartmentOutlined,
-  OrderedListOutlined,
-} from '@ant-design/icons';
-import { useState } from 'react';
-
-// 静态菜单数据（后续接入真实菜单数据）
-interface MenuItem {
-  id: number;
-  name: string;
-  path: string;
-  icon: React.ReactNode;
-}
-
-const staticMenus: MenuItem[] = [
-  { id: 1, name: '仪表盘', path: '/dashboard', icon: <DashboardOutlined /> },
-  { id: 2, name: '用户管理', path: '/system/user', icon: <UserOutlined /> },
-  { id: 3, name: '角色管理', path: '/system/role', icon: <TeamOutlined /> },
-  { id: 4, name: '菜单管理', path: '/system/menu', icon: <OrderedListOutlined /> },
-  { id: 5, name: '部门管理', path: '/system/dept', icon: <ApartmentOutlined /> },
-  { id: 6, name: '字典管理', path: '/system/dict', icon: <FileTextOutlined /> },
-  { id: 7, name: '通知公告', path: '/system/announcement', icon: <BellOutlined /> },
-  { id: 8, name: '操作日志', path: '/system/operation-log', icon: <ProfileOutlined /> },
-  { id: 9, name: '登录日志', path: '/system/loginlog', icon: <LogoutOutlined /> },
-  { id: 10, name: '在线用户', path: '/monitor/online', icon: <MonitorOutlined /> },
-  { id: 11, name: '参数设置', path: '/system/config', icon: <SettingOutlined /> },
-  { id: 12, name: '安全中心', path: '/profile', icon: <SafetyCertificateOutlined /> },
-];
+import { SearchOutlined } from '@ant-design/icons';
+import { useMemo, useState } from 'react';
+import { RootState } from '@/store';
+import { useSelector } from 'react-redux';
+import { getSearchableRoutes } from '@/router/helper.ts';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Search: React.FC = () => {
   // 响应式处理
   const screens = Grid.useBreakpoint();
+
+  const location = useLocation();
+  const navigate = useNavigate();
   // 对话框控制
   const [isModalOpen, setIsModalOpen] = useState(false);
   // 当前选中的菜单项索引
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activePath, setActivePath] = useState(location.pathname);
+  const [keyword, setKeyword] = useState('');
 
+  const routes = useSelector((state: RootState) => state.permission.routes);
+
+  const searchValues = useMemo(() => {
+    console.log('触发getSearchableRoutes');
+    return getSearchableRoutes(routes?.children ?? []);
+  }, [routes]);
+  console.log('searchValues', searchValues);
   const handleOk = () => {
     setIsModalOpen(false);
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+  };
+
+  // 跳转到指定菜单
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setIsModalOpen(false);
+  };
+
+  // 搜索功能
+  const filteredMenus = useMemo(() => {
+    const value = keyword.trim().toLowerCase();
+    if (!value) {
+      return searchValues;
+    }
+    return searchValues.filter(
+      (menu) => menu.title.toLowerCase().includes(value) || menu.path.toLowerCase().includes(value),
+    );
+  }, [searchValues, keyword]);
+  // 键盘事件处理
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (filteredMenus.length === 0) {
+      return;
+    }
+    const currentIndex = filteredMenus.findIndex((menu) => menu.path === activePath);
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextIndex =
+        currentIndex === -1 || currentIndex === filteredMenus.length - 1 ? 0 : currentIndex + 1;
+      setActivePath(filteredMenus[nextIndex].path);
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prevIndex = currentIndex <= 0 ? filteredMenus.length - 1 : currentIndex - 1;
+      setActivePath(filteredMenus[prevIndex].path);
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const targetMenu = filteredMenus.find((menu) => menu.path === activePath);
+      if (targetMenu) {
+        handleNavigate(targetMenu.path);
+      }
+    }
   };
 
   return (
@@ -90,7 +112,14 @@ const Search: React.FC = () => {
           title={
             <div className={styles.modal_title}>
               <div>
-                <Input prefix={<SearchOutlined />} placeholder={'输入关键字搜索菜单'} />
+                <Input
+                  autoFocus
+                  prefix={<SearchOutlined />}
+                  placeholder={'输入关键字搜索菜单'}
+                  value={keyword}
+                  onKeyDown={handleKeyDown}
+                  onChange={(e) => setKeyword(e.target.value)}
+                />
               </div>
             </div>
           }
@@ -99,24 +128,28 @@ const Search: React.FC = () => {
           onOk={handleOk}
           onCancel={handleCancel}
           footer={null}
+          destroyOnHidden
         >
           <div>
             <div>
               <Divider />
             </div>
             <div className={styles.modal_body}>
-              {staticMenus.length === 0 ? (
+              {filteredMenus.length === 0 ? (
                 <div className={styles.empty_text}>暂无匹配的菜单</div>
               ) : (
                 <ul className={styles.menu_list}>
-                  {staticMenus.map((menu, index) => (
+                  {filteredMenus.map((menu) => (
                     <li
-                      key={menu.id}
-                      className={`${styles.menu_item} ${index === activeIndex ? styles.active : ''}`}
-                      onMouseEnter={() => setActiveIndex(index)}
+                      key={menu.path}
+                      className={`${styles.menu_item} ${
+                        menu.path === activePath ? styles.active : ''
+                      }`}
+                      onMouseEnter={() => setActivePath(menu.path)}
+                      onClick={() => handleNavigate(menu.path)}
                     >
                       <span className={styles.menu_icon}>{menu.icon}</span>
-                      <span className={styles.menu_name}>{menu.name}</span>
+                      <span className={styles.menu_name}>{menu.title}</span>
                       <span className={styles.menu_path}>{menu.path}</span>
                     </li>
                   ))}
@@ -145,7 +178,7 @@ const Search: React.FC = () => {
                     <span className={styles.footer_text}>选择</span>
                   </div>
                 </div>
-                <div className={styles.footer_right}>共 {staticMenus.length} 项</div>
+                <div className={styles.footer_right}>共 {filteredMenus.length} 项</div>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { AppRoute } from '@/types/route.ts';
+import { AppRoute, RouteSearchItem } from '@/types/route.ts';
 import { LAYOUT_COMPONENT } from '@/constants';
 
 // 从后端路由树中递归查找第一个可访问的页面路径
@@ -39,74 +39,25 @@ export function getHomePath(root: AppRoute): string {
 }
 
 /**
- * 拼接路由路径：父路径 + 子路径。
+ * 拼接并规范化路由路径。
+ *
  * - path 为空：返回父路径
- * - path 为绝对路径：直接使用（去掉尾部斜杠）
- * - 否则与父路径拼接，并合并多余斜杠
+ * - path 为绝对路径：直接使用
+ * - path 为相对路径：与父路径拼接
+ * - 合并连续斜杠
+ * - 移除尾部斜杠，根路径保留 /
  */
 export function normalizePath(parentPath: string, path?: string): string {
-  if (!path) return parentPath || '/';
-  if (path.startsWith('/')) return path.replace(/\/+$/, '') || '/';
-  const parent = parentPath.replace(/\/+$/, '');
-  return `${parent}/${path}`.replace(/\/+/g, '/');
-}
-
-// 路由链路中的单个节点（面包屑、标签页等复用）
-export interface MatchedRoute {
-  path: string;
-  title?: string;
-  keepAlive?: boolean;
-}
-
-// 路径段匹配：支持 :param 动态段
-function matchSegments(routePath: string, pathname: string): boolean {
-  const routeSegments = routePath.split('/').filter(Boolean);
-  const pathSegments = pathname.split('/').filter(Boolean);
-  return (
-    routeSegments.length === pathSegments.length &&
-    routeSegments.every(
-      (segment, index) => segment.startsWith(':') || segment === pathSegments[index],
-    )
-  );
-}
-
-/**
- * 在路由树中查找与 pathname 精确匹配的节点链路（从根到当前页）。
- * 链路包含每一层的 path / title / keepAlive，可能含没有 title 的布局/目录节点，由调用方过滤。
- * 找不到精确匹配时返回空数组。
- */
-export function findRouteChain(
-  routes: AppRoute[],
-  pathname: string,
-  parentPath = '',
-): MatchedRoute[] {
-  for (const route of routes) {
-    if (!route || route.redirect || route.index) continue;
-
-    const currentPath = normalizePath(parentPath, route.path);
-    const self: MatchedRoute = {
-      path: currentPath,
-      title: route.meta?.title,
-      keepAlive: route.meta?.keepAlive,
-    };
-
-    // 优先向更深层匹配
-    if (Array.isArray(route.children) && route.children.length) {
-      const childChain = findRouteChain(route.children, pathname, currentPath);
-      if (childChain.length) {
-        return [self, ...childChain];
-      }
-    }
-
-    // 当前节点精确匹配
-    if (route.path && matchSegments(currentPath, pathname)) {
-      return [self];
-    }
+  if (!path) {
+    return parentPath.replace(/\/+/g, '/').replace(/\/+$/, '') || '/';
   }
-  return [];
+  const fullPath = path.startsWith('/') ? path : `${parentPath}/${path}`;
+
+  const normalized = fullPath.replace(/\/+/g, '/');
+
+  return normalized.replace(/\/+$/, '') || '/';
 }
 
-// 通用路由树遍历访问器：返回 false 可阻止继续向下遍历该节点的子树
 export type RouteVisitor = (
   route: AppRoute,
   currentPath: string,
@@ -150,5 +101,40 @@ export function collectExcludePaths(routes: AppRoute[], parentPath = ''): string
     },
     parentPath,
   );
+  return result;
+}
+
+/**
+ * 获取可搜索的页面路由
+ * 只负责提取页面信息，不负责搜索过滤
+ */
+export function getSearchableRoutes(routes: AppRoute[], parentPath = ''): RouteSearchItem[] {
+  const result: RouteSearchItem[] = [];
+
+  for (const route of routes) {
+    // 排除无效、重定向、隐藏路由
+    if (!route || route.redirect || route.meta?.hidden) {
+      continue;
+    }
+    const currentPath = normalizePath(parentPath, route.path);
+
+    // 判断是否为真实页面
+    const isPage =
+      !!route.path && !!route.component && route.component !== LAYOUT_COMPONENT && !route.index;
+
+    if (isPage && route.meta?.title) {
+      result.push({
+        icon: route.meta.icon,
+        title: route.meta.title,
+        path: currentPath,
+      });
+    }
+
+    // 继续遍历子路由，包括目录路由
+    if (route.children?.length) {
+      result.push(...getSearchableRoutes(route.children, currentPath));
+    }
+  }
+
   return result;
 }

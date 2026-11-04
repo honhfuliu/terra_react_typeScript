@@ -22,7 +22,7 @@ export const login = async (data: LoginParams) => {
     return await request.post<UserInfo>('/auth/login', data);
   } catch (e) {
     console.error(e);
-    return null;
+    throw e;
   }
 };
 
@@ -38,7 +38,7 @@ export const getCode = async () => {
     return await request.get<CaptchaResult>('/auth/getCode');
   } catch (e) {
     console.error(e);
-    return null;
+    throw e;
   }
 };
 // 退出登录
@@ -48,7 +48,7 @@ export const logout = async () => {
     return true;
   } catch (e) {
     console.error(e);
-    return false;
+    throw e;
   }
 };
 export type UserPermissions = {
@@ -61,6 +61,6 @@ export const getUserPerms = async () => {
     return await request.get<UserPermissions>('/auth/permissions');
   } catch (e) {
     console.error(e);
-    return null;
+    throw e;
   }
 };

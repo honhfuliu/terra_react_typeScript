@@ -53,6 +53,7 @@ const Login: React.FC = () => {
     }
     try {
       const result = await login({ ...values, uuid: captchaUuid });
+      console.log('result', result);
       if (result) {
         storage.set(STORAGE_KEY.TOKEN, result.token);
         const userInfo = {

@@ -1,9 +1,8 @@
 import * as React from 'react';
 import styles from './index.module.less';
-import { Dropdown, MenuProps, Tabs } from 'antd';
-import { AppRoute } from '@/types/route.ts';
+import { Dropdown, MenuProps } from 'antd';
 import { AppDispatch, RootState } from '@/store';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { UIMatch, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   addView,
@@ -13,9 +12,10 @@ import {
   delRightViews,
   delAllViews,
 } from '@/store/modules/tagView';
-import { getHomePath, findRouteChain } from '@/router/helper';
-import { ReloadOutlined } from '@ant-design/icons';
+import { getHomePath } from '@/router/helper';
+import { CloseOutlined, LeftOutlined, ReloadOutlined, RightOutlined } from '@ant-design/icons';
 import { usePageKeepAlive } from '@/keepalive/KeepAliveContext';
+import { Meta } from '@/types/route.ts';
 
 const TagsView: React.FC = () => {
   const location = useLocation();
@@ -33,6 +33,56 @@ const TagsView: React.FC = () => {
 
   // 获取 keepAlive 维护的 ref
   const { aliveRef } = usePageKeepAlive();
+
+  // 标签列表滚动容器
+  const listRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false);
+  const [canScrollRight, setCanScrollRight] = React.useState(false);
+
+  // 更新左右箭头的可用状态
+  const updateScrollState = React.useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  // 容器尺寸变化时重新计算
+  React.useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    updateScrollState();
+
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [updateScrollState]);
+
+  // 标签增减后重新计算
+  React.useEffect(() => {
+    const raf = requestAnimationFrame(updateScrollState);
+    return () => cancelAnimationFrame(raf);
+  }, [visitedViews, updateScrollState]);
+
+  // 当前标签变化后，将其滚动到可视区域
+  React.useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      const activeNode = Array.from(listRef.current?.children ?? []).find(
+        (child) => (child as HTMLElement).dataset.path === currentPath,
+      ) as HTMLElement | undefined;
+
+      activeNode?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+      updateScrollState();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [currentPath, updateScrollState]);
+
+  // 左右箭头滚动
+  const scrollList = (direction: 1 | -1) => {
+    const el = listRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction * Math.max(el.clientWidth * 0.7, 160), behavior: 'smooth' });
+  };
 
   // 清理页面缓存
   const clearViewCache = async (views: typeof visitedViews) => {
@@ -129,105 +179,129 @@ const TagsView: React.FC = () => {
     }
   };
 
+  // 构建单个标签的右键菜单
+  const getMenuItems = (view: (typeof visitedViews)[number]): MenuProps['items'] => {
+    const index = visitedViews.findIndex((item) => item.path === view.path);
+    return [
+      {
+        key: 'refresh',
+        label: '刷新当前页',
+        icon: <ReloadOutlined />,
+      },
+      {
+        type: 'divider',
+      },
+      {
+        key: 'close',
+        label: '关闭当前页',
+        disabled: !view.closable,
+      },
+      {
+        key: 'closeOthers',
+        label: '关闭其他页',
+      },
+      {
+        key: 'closeLeft',
+        label: '关闭左侧标签',
+        disabled: index === 0,
+      },
+      {
+        key: 'closeRight',
+        label: '关闭右侧标签',
+        disabled: index === visitedViews.length - 1,
+      },
+      {
+        type: 'divider',
+      },
+      {
+        key: 'closeAll',
+        label: '关闭全部标签',
+      },
+    ];
+  };
+
+  const matches = useMatches() as UIMatch<unknown, Meta>[];
+
+  // 监听路由变化，添加标签页
   React.useEffect(() => {
-    if (!routes) return;
-    const chain = findRouteChain([routes as AppRoute], location.pathname);
-    const routeInfo = chain[chain.length - 1];
-    if (!routeInfo?.title) return;
+    // 获取当前匹配链中最后一个有效页面路由
+    const currentMatch = [...matches].reverse().find((match) => {
+      const handle = match.handle;
+      return handle?.title && !handle.hidden;
+    });
+
+    if (!currentMatch) return;
+
+    const handle = currentMatch.handle;
+
     dispatch(
       addView({
         path: currentPath,
-        title: routeInfo.title,
+        title: handle.title,
         closable: currentPath !== homePath,
-        keepAlive: routeInfo.keepAlive ?? false,
+        keepAlive: handle.keepAlive ?? false,
       }),
     );
-  }, [routes, location.pathname, currentPath, dispatch, homePath]);
+  }, [matches, currentPath, dispatch, homePath]);
 
-  // React.useEffect(() => {
-  //   console.log('[TagsView] 路由变化:', location.pathname);
-  // }, [location.pathname]);
-  //
-  // React.useEffect(() => {
-  //   console.log(
-  //     '[TagsView] 标签列表变化:',
-  //     visitedViews.map((view) => view.path),
-  //   );
-  // }, [visitedViews]);
   return (
     <div className={styles.tagsView}>
-      <Tabs
-        type="editable-card"
-        hideAdd
-        activeKey={currentPath}
-        onChange={(key) => navigate(key)}
-        onEdit={(targetKey, action) => {
-          if (action === 'remove') {
-            void handleClose(String(targetKey));
-          }
-        }}
-        items={visitedViews.map((view) => {
-          const menuItems: MenuProps['items'] = [
-            {
-              key: 'refresh',
-              label: '刷新当前页',
-              icon: <ReloadOutlined />,
-            },
-            {
-              type: 'divider',
-            },
-            {
-              key: 'close',
-              label: '关闭当前页',
-              disabled: !view.closable,
-            },
-            {
-              key: 'closeOthers',
-              label: '关闭其他页',
-            },
-            {
-              key: 'closeLeft',
-              label: '关闭左侧标签',
-              disabled: visitedViews.findIndex((item) => item.path === view.path) === 0,
-            },
-            {
-              key: 'closeRight',
-              label: '关闭右侧标签',
-              disabled:
-                visitedViews.findIndex((item) => item.path === view.path) ===
-                visitedViews.length - 1,
-            },
-            {
-              type: 'divider',
-            },
-            {
-              key: 'closeAll',
-              label: '关闭全部标签',
-            },
-          ];
+      <button
+        type="button"
+        className={styles.arrow}
+        aria-label="向左滚动标签"
+        disabled={!canScrollLeft}
+        onClick={() => scrollList(-1)}
+      >
+        <LeftOutlined />
+      </button>
 
-          return {
-            key: view.path,
-            label: (
-              <Dropdown
-                trigger={['contextMenu']}
-                menu={{
-                  items: menuItems,
-                  onClick: ({ key, domEvent }) => {
-                    // 阻止菜单项点击事件沿 React 组件树冒泡到 Tabs 标签，
-                    // 否则会误触发标签的 onChange 导航，覆盖菜单里的跳转逻辑
-                    domEvent.stopPropagation();
-                    handleContextMenuClick(key, view.path);
-                  },
-                }}
+      <div className={styles.tagList} ref={listRef} onScroll={updateScrollState}>
+        {visitedViews.map((view) => {
+          const active = view.path === currentPath;
+          return (
+            <Dropdown
+              key={view.path}
+              trigger={['contextMenu']}
+              menu={{
+                items: getMenuItems(view),
+                onClick: ({ key, domEvent }) => {
+                  // 阻止菜单项点击事件冒泡到标签，否则会误触发标签的跳转
+                  domEvent.stopPropagation();
+                  handleContextMenuClick(key, view.path);
+                },
+              }}
+            >
+              <div
+                data-path={view.path}
+                className={`${styles.tag}${active ? ` ${styles.tagActive}` : ''}`}
+                onClick={() => navigate(view.path)}
               >
-                <span>{view.title}</span>
-              </Dropdown>
-            ),
-            closable: view.closable,
-          };
+                <span className={styles.tagTitle}>{view.title}</span>
+                {view.closable && (
+                  <CloseOutlined
+                    className={styles.tagClose}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleClose(view.path);
+                    }}
+                  />
+                )}
+              </div>
+            </Dropdown>
+          );
         })}
-      />
+      </div>
+
+      <button
+        type="button"
+        className={styles.arrow}
+        aria-label="向右滚动标签"
+        disabled={!canScrollRight}
+        onClick={() => scrollList(1)}
+      >
+        <RightOutlined />
+      </button>
     </div>
   );
 };
