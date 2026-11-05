@@ -1,4 +1,5 @@
 import request from '@/utils/request.ts';
+import { AxiosResponse } from 'axios';
 import { Dayjs } from 'dayjs';
 
 // 登录日志列表行数据（对应后端 system_login_log）
@@ -21,8 +22,8 @@ export type LoginLogSearchType = {
   loginTime?: [Dayjs, Dayjs]; // 表单中的登录时间范围（提交时转换为 startTime/endTime）
   startTime?: string; // 登录时间-开始（yyyy-MM-dd HH:mm:ss）
   endTime?: string; // 登录时间-结束（yyyy-MM-dd HH:mm:ss）
-  pageNum: number; // 当前页
-  pageSize: number; // 每页条数
+  pageNum?: number; // 当前页
+  pageSize?: number; // 每页条数
 };
 
 // 分页返回
@@ -35,6 +36,21 @@ export type LoginLogPageResult = {
 export const loginLogList = async (params: LoginLogSearchType) => {
   try {
     return await request.get<LoginLogPageResult>('/system/loginLog/list', { params });
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+/**
+ * 导出登录日志
+ */
+export const exportLoginLog = (params: LoginLogSearchType) => {
+  try {
+    return request.get<AxiosResponse<Blob>>('/system/loginLog/export', {
+      params,
+      responseType: 'blob',
+    });
   } catch (e) {
     console.error(e);
     throw e;

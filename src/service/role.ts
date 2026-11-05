@@ -1,5 +1,6 @@
 import * as React from 'react';
 import request from '@/utils/request.ts';
+import { AxiosResponse } from 'axios';
 import { Dayjs } from 'dayjs';
 
 export // 角色添加
@@ -27,8 +28,8 @@ export type RoleSearchType = {
   status?: string;
   createTime?: [Dayjs, Dayjs];
   roleKey?: string;
-  pageNum: number;
-  pageSize: number;
+  pageNum?: number;
+  pageSize?: number;
   startTime?: string;
   endTime?: string;
 };
@@ -82,6 +83,21 @@ export type RoleNode = {
 export const roleOptions = async () => {
   try {
     return await request.get<RoleNode[]>('/system/role/options');
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+/**
+ * 导出角色
+ */
+export const exportRole = (params: RoleSearchType) => {
+  try {
+    return request.get<AxiosResponse<Blob>>('/system/role/export', {
+      params,
+      responseType: 'blob',
+    });
   } catch (e) {
     console.error(e);
     throw e;

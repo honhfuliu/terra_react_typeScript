@@ -35,6 +35,7 @@ import { MenuNode, menuOptions } from '@/service/menu.ts';
 import {
   addRole,
   deleteRoleByIds,
+  exportRole,
   getRoleById,
   RoleAddType,
   roleList,
@@ -48,6 +49,7 @@ import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { FilterOutlined } from '@ant-design/icons';
 import { PaginationState } from '@/types/common.ts';
+import { downloadFile, getFileNameFromDisposition } from '@/utils/download.ts';
 
 // 菜单树转换（Tree key = menuId）
 const convertMenuTree = (data: MenuNode[]): TreeDataNode[] => {
@@ -280,6 +282,36 @@ const Role: React.FC = () => {
   useEffect(() => {
     getRoleList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   }, []);
+
+  // 导出
+  const handleExport = async () => {
+    try {
+      // 获取当前搜索条件
+      const searchParams = searchForm.getFieldsValue();
+      const params: RoleSearchType = {
+        ...searchParams,
+      };
+      if (searchParams.createTime && Array.isArray(searchParams.createTime)) {
+        params.startTime = searchParams.createTime[0].format(DATE_FORMAT.DATE_TIME);
+        params.endTime = searchParams.createTime[1].format(DATE_FORMAT.DATE_TIME);
+        delete params.createTime;
+      }
+
+      // 请求导出接口
+      const res = await exportRole(params);
+
+      // 下载 Excel（优先使用后端响应头中的文件名）
+      const fileName =
+        getFileNameFromDisposition(res.headers['content-disposition'] as string) ??
+        '角色列表.xlsx';
+      downloadFile(res.data, fileName);
+
+      message.success('导出成功');
+    } catch (e) {
+      console.error(e);
+      message.error('导出失败');
+    }
+  };
 
   // 对话框
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -514,7 +546,11 @@ const Role: React.FC = () => {
                 </Button>
               </Popconfirm>
             </Auth>
-            <Button className={styles.toolButton} icon={<Download width={16} height={16} />}>
+            <Button
+              className={styles.toolButton}
+              icon={<Download width={16} height={16} />}
+              onClick={() => handleExport()}
+            >
               导出
             </Button>
           </Space>

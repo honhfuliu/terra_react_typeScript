@@ -30,6 +30,10 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response: AxiosResponse<Result>) => {
+    // 文件下载：返回完整响应（含 headers，便于解析后端文件名），不进行 JSON 业务响应处理
+    if (response.config.responseType === 'blob') {
+      return response;
+    }
     const res = response.data;
     if (res.code !== HTTP.SUCCESS) {
       // 401：未登录 / Token失效

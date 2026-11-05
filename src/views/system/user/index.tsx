@@ -41,6 +41,7 @@ import { CaretDownOutlined, CaretUpOutlined, FilterOutlined } from '@ant-design/
 import {
   addUser,
   deleteUserByIds,
+  exportUser,
   getUserById,
   resetPassword,
   ResetPasswordType,
@@ -55,6 +56,7 @@ import { COMMON_STATUS, DATE_FORMAT, DICT_TYPE, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { PaginationState } from '@/types/common.ts';
+import { downloadFile, getFileNameFromDisposition } from '@/utils/download.ts';
 
 const User: React.FC = () => {
   const sexOptions = useDict(DICT_TYPE.SYS_SEX); // 性别状态
@@ -356,6 +358,36 @@ const User: React.FC = () => {
     void getUserList(PAGINATION.DEFAULT_PAGE_NUM, PAGINATION.DEFAULT_PAGE_SIZE);
   }, []);
 
+  const handleExport = async () => {
+    try {
+      // 获取当前搜索条件
+      const searchParams = searchForm.getFieldsValue();
+      const params: UserSearchType = {
+        ...searchParams,
+        deptId: selectedKeys?.[0],
+      };
+      if (searchParams.createTime && Array.isArray(searchParams.createTime)) {
+        params.startTime = searchParams.createTime[0].format(DATE_FORMAT.DATE_TIME);
+        params.endTime = searchParams.createTime[1].format(DATE_FORMAT.DATE_TIME);
+        delete params.createTime;
+      }
+
+      // 请求导出接口
+      const res = await exportUser(params);
+
+      // 下载 Excel（优先使用后端响应头中的文件名）
+      const fileName =
+        getFileNameFromDisposition(res.headers['content-disposition'] as string) ??
+        '用户列表.xlsx';
+      downloadFile(res.data, fileName);
+
+      message.success('导出成功');
+    } catch (e) {
+      console.error(e);
+      message.error('导出失败');
+    }
+  };
+
   // 分页处理
   const onChange: PaginationProps['onChange'] = async (page, pageSize) => {
     setPagination((prev) => ({
@@ -591,7 +623,7 @@ const User: React.FC = () => {
                 <Button
                   className={styles.toolButton}
                   icon={<Download width={16} height={16} />}
-                  // onClick={() => handleTodo('导出')}
+                  onClick={() => handleExport()}
                 >
                   导出
                 </Button>

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import request from '@/utils/request.ts';
+import { AxiosResponse } from 'axios';
 import { Dayjs } from 'dayjs';
 
 // 操作日志列表行数据（对应后端 system_operation_log）
@@ -34,8 +35,8 @@ export type OperationLogSearchType = {
   operationTime?: [Dayjs, Dayjs]; // 表单中的操作时间范围（提交时转换为 startTime/endTime）
   startTime?: string; // 操作时间-开始（yyyy-MM-dd HH:mm:ss）
   endTime?: string; // 操作时间-结束（yyyy-MM-dd HH:mm:ss）
-  pageNum: number; // 当前页
-  pageSize: number; // 每页条数
+  pageNum?: number; // 当前页
+  pageSize?: number; // 每页条数
 };
 
 // 分页返回
@@ -60,6 +61,21 @@ export const operationLogList = async (params: OperationLogSearchType) => {
 export const operationLogClear = async () => {
   try {
     return await request.post<void>('/system/operationLog/clear');
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+/**
+ * 导出操作日志
+ */
+export const exportOperationLog = (params: OperationLogSearchType) => {
+  try {
+    return request.get<AxiosResponse<Blob>>('/system/operationLog/export', {
+      params,
+      responseType: 'blob',
+    });
   } catch (e) {
     console.error(e);
     throw e;

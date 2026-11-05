@@ -25,6 +25,7 @@ import {
 import { useEffect, useState } from 'react';
 import { FilterOutlined, EyeOutlined, ClearOutlined } from '@ant-design/icons';
 import {
+  exportOperationLog,
   operationLogClear,
   operationLogDelete,
   operationLogList,
@@ -36,6 +37,7 @@ import { DATE_FORMAT, DICT_TYPE, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import JsonViewer from '@/components/JsonViewer';
 import { PaginationState } from '@/types/common.ts';
+import { downloadFile, getFileNameFromDisposition } from '@/utils/download.ts';
 
 const { RangePicker } = DatePicker;
 
@@ -141,8 +143,38 @@ const OperationLog: React.FC = () => {
   };
 
   // 导出
-  const handleExport = () => {
-    message.success('导出成功');
+  const handleExport = async () => {
+    try {
+      // 获取当前搜索条件
+      const searchValues = searchForm.getFieldsValue();
+      const params: OperationLogSearchType = {
+        username: searchValues.username,
+        module: searchValues.module,
+        operation: searchValues.operation,
+        status: searchValues.status,
+        requestIp: searchValues.requestIp,
+      };
+      // 操作时间范围转换为后端需要的 startTime / endTime 字符串
+      if (searchValues.operationTime && searchValues.operationTime.length === 2) {
+        const [start, end] = searchValues.operationTime;
+        params.startTime = start.format(DATE_FORMAT.DATE_TIME);
+        params.endTime = end.format(DATE_FORMAT.DATE_TIME);
+      }
+
+      // 请求导出接口
+      const res = await exportOperationLog(params);
+
+      // 下载 Excel（优先使用后端响应头中的文件名）
+      const fileName =
+        getFileNameFromDisposition(res.headers['content-disposition'] as string) ??
+        '操作日志.xlsx';
+      downloadFile(res.data, fileName);
+
+      message.success('导出成功');
+    } catch (e) {
+      console.error(e);
+      message.error('导出失败');
+    }
   };
 
   // 清空操作日志

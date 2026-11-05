@@ -15,19 +15,27 @@ import {
   Select,
   Table,
   TableColumnsType,
+  App,
 } from 'antd';
 import { useEffect, useState } from 'react';
 import { FilterOutlined } from '@ant-design/icons';
-import { loginLogList, LoginLogRow, LoginLogSearchType } from '@/service/loginLog.ts';
+import {
+  exportLoginLog,
+  loginLogList,
+  LoginLogRow,
+  LoginLogSearchType,
+} from '@/service/loginLog.ts';
 import { useDict } from '@/hooks/useDict.ts';
 import { DATE_FORMAT, DICT_TYPE, PAGINATION, RESULT_STATUS } from '@/constants';
 import DictTag from '@/components/DictTag';
 import { PaginationState } from '@/types/common.ts';
+import { downloadFile, getFileNameFromDisposition } from '@/utils/download.ts';
 
 const { RangePicker } = DatePicker;
 
 const Loginlog: React.FC = () => {
   const statusOptions = useDict(DICT_TYPE.SYS_RESULT_STATUS); // 状态
+  const { message } = App.useApp();
   const [searchForm] = Form.useForm<LoginLogSearchType>();
 
   // 表格数据
@@ -94,6 +102,38 @@ const Loginlog: React.FC = () => {
   // 翻页
   const handlePageChange: PaginationProps['onChange'] = (page, pageSize) => {
     void fetchList(page, pageSize);
+  };
+
+  // 导出登录日志
+  const handleExport = async () => {
+    try {
+      // 获取当前搜索条件
+      const searchValues = searchForm.getFieldsValue();
+      const params: LoginLogSearchType = {
+        ...searchValues,
+      };
+      // 登录时间范围转换为后端需要的 startTime / endTime 字符串
+      if (searchValues.loginTime && searchValues.loginTime.length === 2) {
+        const [start, end] = searchValues.loginTime;
+        params.startTime = start.format(DATE_FORMAT.DATE_TIME);
+        params.endTime = end.format(DATE_FORMAT.DATE_TIME);
+        delete params.loginTime;
+      }
+
+      // 请求导出接口
+      const res = await exportLoginLog(params);
+
+      // 下载 Excel（优先使用后端响应头中的文件名）
+      const fileName =
+        getFileNameFromDisposition(res.headers['content-disposition'] as string) ??
+        '登录日志.xlsx';
+      downloadFile(res.data, fileName);
+
+      message.success('导出成功');
+    } catch (e) {
+      console.error(e);
+      message.error('导出失败');
+    }
   };
 
   // 表格列配置
@@ -235,7 +275,11 @@ const Loginlog: React.FC = () => {
             <span className={styles.cardTitle}>登录记录</span>
             <span className={styles.cardSubtitle}>展示最近的用户登录行为及设备信息</span>
           </div>
-          <Button className={styles.toolButton} icon={<Download width={16} height={16} />}>
+          <Button
+            className={styles.toolButton}
+            icon={<Download width={16} height={16} />}
+            onClick={() => handleExport()}
+          >
             导出日志
           </Button>
         </div>

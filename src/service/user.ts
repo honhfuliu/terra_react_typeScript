@@ -1,4 +1,5 @@
 import request from '@/utils/request.ts';
+import { AxiosResponse } from 'axios';
 import { Dayjs } from 'dayjs';
 import * as React from 'react';
 
@@ -19,8 +20,8 @@ export type UserSearchType = {
   createTime?: [Dayjs, Dayjs];
   startTime?: string;
   endTime?: string;
-  pageNum: number;
-  pageSize: number;
+  pageNum?: number;
+  pageSize?: number;
 };
 export type UserPageResult = {
   rows: UserRow[];
@@ -157,6 +158,22 @@ export const changePassword = async (data: ChangePasswordType) => {
 export const uploadAvatar = (formData: FormData) => {
   try {
     return request.post<string>('/system/user/avatar', formData);
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+// 头像上传
+/**
+ * 导出用户
+ */
+export const exportUser = (params: UserSearchType) => {
+  try {
+    return request.get<AxiosResponse<Blob>>('/system/user/export', {
+      params,
+      responseType: 'blob',
+    });
   } catch (e) {
     console.error(e);
     throw e;
