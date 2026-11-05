@@ -1,22 +1,7 @@
 import * as React from 'react';
-import {
-  App,
-  Avatar,
-  Button,
-  Card,
-  Form,
-  GetProp,
-  Input,
-  Modal,
-  Radio,
-  Tag,
-  Typography,
-  Upload,
-  UploadProps,
-} from 'antd';
+import { App, Avatar, Button, Card, Form, Input, Modal, Radio, Tag, Typography } from 'antd';
 import type { RadioChangeEvent } from 'antd';
 import {
-  CameraOutlined,
   CheckCircleFilled,
   EditOutlined,
   EyeInvisibleOutlined,
@@ -40,6 +25,7 @@ import DictTag from '@/components/DictTag';
 import storage from '@/utils/storage.ts';
 import { COMMON_STATUS, DICT_TYPE, STORAGE_KEY } from '@/constants';
 import { useNavigate } from 'react-router-dom';
+import ImageUpload from '@/components/ImageUpload';
 
 const { Title, Text } = Typography;
 
@@ -49,9 +35,6 @@ interface ChangePwdFormValues {
   newPassword: string;
   confirmPassword: string;
 }
-
-type FileType = Parameters<GetProp<UploadProps, 'beforeUpload'>>[0];
-
 // 主页面
 const Profile: React.FC = () => {
   const { message } = App.useApp();
@@ -161,34 +144,10 @@ const Profile: React.FC = () => {
     pwdForm.resetFields();
     setChangePwdOpen(false);
   };
-
-  // 上传文件检测
-  const beforeUpload = (file: FileType) => {
-    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-    if (!isJpgOrPng) {
-      message.error('只允许上传 JPG 或 PNG 格式的图片');
-    }
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-      message.error('图片必须小于 2MB!');
-    }
-    return isJpgOrPng && isLt2M;
+  const handleUploadSuccess = (url: string) => {
+    setImageUrl(url);
+    console.log('上传成功，图片地址：', url);
   };
-  // 上传文件
-  const handleUpload: UploadProps['customRequest'] = async (options) => {
-    const { file, onSuccess, onError } = options;
-    try {
-      const formData = new FormData();
-      formData.append('avatar', file as File);
-      const res = await uploadAvatar(formData);
-      setImageUrl(res);
-      console.log(res);
-      onSuccess?.(res);
-    } catch (error) {
-      onError?.(error as Error);
-    }
-  };
-
   return (
     <div className={styles.profilePage}>
       {/* 页面头部 */}
@@ -230,15 +189,11 @@ const Profile: React.FC = () => {
                 className={styles.avatar}
               />
               <div className={styles.cameraIcon}>
-                <Upload
-                  name="avatar"
-                  className="avatar-uploader"
-                  showUploadList={false}
-                  beforeUpload={beforeUpload}
-                  customRequest={handleUpload}
-                >
-                  <CameraOutlined />
-                </Upload>
+                <ImageUpload
+                  onSuccess={handleUploadSuccess}
+                  uploadApi={uploadAvatar}
+                  name={'avatar'}
+                />
               </div>
             </div>
             <div className={styles.userInfo}>
