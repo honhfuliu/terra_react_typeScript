@@ -3,7 +3,6 @@ import styles from './index.module.less';
 import avatarImage from '@/assets/images/avatar.png';
 import { App, Avatar, Breadcrumb, Button, Dropdown, Layout, MenuProps, Space, Grid } from 'antd';
 import {
-  BellOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
   MenuFoldOutlined,
@@ -22,6 +21,7 @@ import { logout } from '@/service/auto.ts';
 import storage from '@/utils/storage.ts';
 import { STORAGE_KEY } from '@/constants';
 import Search from '@/layout/AdminLayout/Header/Search';
+import NoticeBell from '@/layout/AdminLayout/Header/NoticeBell';
 import GERENZHONGXIN from '@/assets/svgs/GERENZHONGXIN.svg?react';
 import Exit from '@/assets/svgs/Exit.svg?react';
 import { resetViews } from '@/store/modules/tagView.ts';
@@ -182,7 +182,7 @@ const Header: React.FC = () => {
               )}
             </div>
             <div>
-              <BellOutlined style={{ fontSize: 16, cursor: 'pointer' }} />
+              <NoticeBell />
             </div>
             <div>
               <Dropdown

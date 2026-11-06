@@ -124,3 +124,22 @@ export const offlineNotice = async (id: number) => {
     throw e;
   }
 };
+
+// 头部最新公告项（GET /system/notice/latest 返回）
+export type NoticeLatestItem = {
+  id: number;
+  noticeType: string; // 公告类型（字典 sys_notice_type）
+  summary: string; // 公告摘要
+  createTime: string; // 创建时间
+  isTop: string; // 是否置顶：1 是 / 0 否
+};
+
+// 获取头部最新公告列表（登录 / F5 刷新时调用）
+export const getLatestNotices = async () => {
+  try {
+    return await request.get<NoticeLatestItem[]>('/system/notice/latest');
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};

@@ -27,7 +27,6 @@ import {
 import { useEffect, useState } from 'react';
 import {
   SearchOutlined,
-  ClockCircleOutlined,
   SendOutlined,
   EyeOutlined,
   EditOutlined,
@@ -429,14 +428,14 @@ const Announcement: React.FC = () => {
       render: (text?: string | null) =>
         text ? <span>{text}</span> : <span className={styles.emptyTime}>-</span>,
     },
-    {
-      title: '失效时间',
-      dataIndex: 'expireTime',
-      key: 'expireTime',
-      width: 170,
-      render: (text?: string | null) =>
-        text ? <span>{text}</span> : <span className={styles.emptyTime}>-</span>,
-    },
+    // {
+    //   title: '失效时间',
+    //   dataIndex: 'expireTime',
+    //   key: 'expireTime',
+    //   width: 170,
+    //   render: (text?: string | null) =>
+    //     text ? <span>{text}</span> : <span className={styles.emptyTime}>-</span>,
+    // },
     {
       title: '浏览量',
       dataIndex: 'viewCount',
@@ -603,9 +602,9 @@ const Announcement: React.FC = () => {
                 新增公告
               </Button>
             </Auth>
-            <Button className={styles.toolButton} icon={<ClockCircleOutlined />}>
-              发布计划
-            </Button>
+            {/*<Button className={styles.toolButton} icon={<ClockCircleOutlined />}>*/}
+            {/*  发布计划*/}
+            {/*</Button>*/}
             <Auth permission={'system:notice:edit'}>
               <Popconfirm
                 open={publishConfirmOpen}

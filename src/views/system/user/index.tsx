@@ -377,8 +377,7 @@ const User: React.FC = () => {
 
       // 下载 Excel（优先使用后端响应头中的文件名）
       const fileName =
-        getFileNameFromDisposition(res.headers['content-disposition'] as string) ??
-        '用户列表.xlsx';
+        getFileNameFromDisposition(res.headers['content-disposition'] as string) ?? '用户列表.xlsx';
       downloadFile(res.data, fileName);
 
       message.success('导出成功');
@@ -613,13 +612,6 @@ const User: React.FC = () => {
                     </Button>
                   </Popconfirm>
                 </Auth>
-                <Button
-                  className={styles.toolButton}
-                  icon={<Download width={16} height={16} />}
-                  // onClick={() => handleTodo('导入')}
-                >
-                  导入
-                </Button>
                 <Button
                   className={styles.toolButton}
                   icon={<Download width={16} height={16} />}
