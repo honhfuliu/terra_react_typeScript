@@ -25,15 +25,7 @@ import {
 } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 import { useEffect, useState } from 'react';
-import Search from '@/assets/svgs/Search.svg?react';
-import Add from '@/assets/svgs/Add.svg?react';
-import Delete from '@/assets/svgs/Delete.svg?react';
-import Download from '@/assets/svgs/Download.svg?react';
-import Freshen from '@/assets/svgs/Freshen.svg?react';
-import Update from '@/assets/svgs/Update.svg?react';
-import Zuzhi from '@/assets/svgs/Zuzhi.svg?react';
-import Left from '@/assets/svgs/Left.svg?react';
-import Right from '@/assets/svgs/Right.svg?react';
+import Icon from '@/components/Icon';
 
 import { TableRowSelection } from 'antd/es/table/interface';
 import { DeptNode, deptOptions } from '@/service/dept.ts';
@@ -260,7 +252,7 @@ const User: React.FC = () => {
             <Button
               type="link"
               size="small"
-              icon={<Update width={16} height={16} />}
+              icon={<Icon icon="mdi:pencil-outline" size={16} />}
               onClick={() => handleEdit(record.userId)}
             >
               修改
@@ -274,7 +266,7 @@ const User: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
+              <Button type="link" size="small" danger icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
                 删除
               </Button>
             </Popconfirm>
@@ -439,6 +431,9 @@ const User: React.FC = () => {
     }));
     await getUserList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize, selectedKeys?.[0]);
   };
+  // 根部门节点：用于树节点图标区分（根节点显示组织图标，子节点显示文件夹图标）
+  const rootDeptKeys = deptTree.map((item) => item.key);
+
   return (
     <div className={styles.layout}>
       <div className={styles.container}>
@@ -446,7 +441,7 @@ const User: React.FC = () => {
         <div className={treeCollapsed ? styles.leftPanelCollapsed : styles.leftPanel}>
           <div className={styles.panelHeader}>
             <div className={styles.panelHeaderTitle}>
-              <Zuzhi width={16} height={16} />
+              <Icon icon="mdi:account-group-outline" size={16} />
               <div>组织机构</div>
             </div>
             <div className={styles.panelHeaderButton}>
@@ -467,19 +462,34 @@ const User: React.FC = () => {
                 )}
               </div>
               <div className={styles.iconWrapper} onClick={() => loadMenuTree()}>
-                <Freshen width={12} height={12} />
+                <Icon icon="mdi:refresh" size={12} />
               </div>
             </div>
           </div>
           <div className={styles.panelBody}>
             <Tree
+              blockNode
+              className={styles.tree}
               treeData={deptTree}
-              // defaultExpandAll
-              showLine={{ showLeafIcon: false }}
               expandedKeys={expandedKeys}
               onExpand={(keys) => setExpandedKeys(keys)}
               onSelect={handleSelect}
               selectedKeys={selectedKeys}
+              titleRender={(node) => (
+                <span className={styles.treeNodeTitle}>
+                  <span className={styles.treeNodeIcon}>
+                    <Icon
+                      icon={
+                        rootDeptKeys.includes(node.key)
+                          ? 'mdi:office-building-outline'
+                          : 'mdi:folder-outline'
+                      }
+                      size={14}
+                    />
+                  </span>
+                  <span className={styles.treeNodeText}>{node.title as React.ReactNode}</span>
+                </span>
+              )}
             />
           </div>
         </div>
@@ -493,7 +503,7 @@ const User: React.FC = () => {
             onClick={() => setTreeCollapsed((prev) => !prev)}
             aria-label={treeCollapsed ? '展开组织机构' : '收起组织机构'}
           >
-            {treeCollapsed ? <Right width={12} height={12} /> : <Left width={12} height={12} />}
+            {treeCollapsed ? <Icon icon="mdi:chevron-double-right" size={12} /> : <Icon icon="mdi:chevron-double-left" size={12} />}
           </Button>
         </div>
 
@@ -563,13 +573,13 @@ const User: React.FC = () => {
                     <div className={styles.searchActions}>
                       <Button
                         type="primary"
-                        icon={<Search width={16} height={16} />}
+                        icon={<Icon icon="mdi:magnify" size={16} />}
                         onClick={() => handleSearch()}
                       >
                         搜索
                       </Button>
                       <Button
-                        icon={<Freshen width={16} height={16} />}
+                        icon={<Icon icon="mdi:refresh" size={16} />}
                         onClick={() => handleResetSearch()}
                       >
                         重置
@@ -592,7 +602,7 @@ const User: React.FC = () => {
                 <Auth permission={'system:user:add'}>
                   <Button
                     className={styles.toolButton}
-                    icon={<Add width={16} height={16} />}
+                    icon={<Icon icon="mdi:plus" size={16} />}
                     onClick={handleAdd}
                   >
                     新增
@@ -607,18 +617,20 @@ const User: React.FC = () => {
                     okText="确定"
                     cancelText="取消"
                   >
-                    <Button className={styles.toolButton} icon={<Delete width={16} height={16} />}>
+                    <Button className={styles.toolButton} icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
                       删除
                     </Button>
                   </Popconfirm>
                 </Auth>
-                <Button
-                  className={styles.toolButton}
-                  icon={<Download width={16} height={16} />}
-                  onClick={() => handleExport()}
-                >
-                  导出
-                </Button>
+                <Auth permission={'system:user:export'}>
+                  <Button
+                    className={styles.toolButton}
+                    icon={<Icon icon="mdi:download" size={16} />}
+                    onClick={() => handleExport()}
+                  >
+                    导出
+                  </Button>
+                </Auth>
               </Space>
             </div>
             <div className={styles.tableCardBody}>

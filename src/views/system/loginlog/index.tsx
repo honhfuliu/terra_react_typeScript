@@ -1,9 +1,7 @@
 import * as React from 'react';
 import styles from './index.module.less';
 
-import Search from '@/assets/svgs/Search.svg?react';
-import Freshen from '@/assets/svgs/Freshen.svg?react';
-import Download from '@/assets/svgs/Download.svg?react';
+import Icon from '@/components/Icon';
 import {
   Button,
   Col,
@@ -28,6 +26,7 @@ import {
 import { useDict } from '@/hooks/useDict.ts';
 import { DATE_FORMAT, DICT_TYPE, PAGINATION, RESULT_STATUS } from '@/constants';
 import DictTag from '@/components/DictTag';
+import Auth from '@/components/Auth';
 import { PaginationState } from '@/types/common.ts';
 import { downloadFile, getFileNameFromDisposition } from '@/utils/download.ts';
 
@@ -253,12 +252,12 @@ const Loginlog: React.FC = () => {
                 <div className={styles.searchActions}>
                   <Button
                     type="primary"
-                    icon={<Search width={16} height={16} />}
+                    icon={<Icon icon="mdi:magnify" size={16} />}
                     onClick={handleSearch}
                   >
                     搜索
                   </Button>
-                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                  <Button icon={<Icon icon="mdi:refresh" size={16} />} onClick={handleResetSearch}>
                     重置
                   </Button>
                 </div>
@@ -275,13 +274,15 @@ const Loginlog: React.FC = () => {
             <span className={styles.cardTitle}>登录记录</span>
             <span className={styles.cardSubtitle}>展示最近的用户登录行为及设备信息</span>
           </div>
-          <Button
-            className={styles.toolButton}
-            icon={<Download width={16} height={16} />}
-            onClick={() => handleExport()}
-          >
-            导出日志
-          </Button>
+          <Auth permission={'system:loginLog:export'}>
+            <Button
+              className={styles.toolButton}
+              icon={<Icon icon="mdi:download" size={16} />}
+              onClick={() => handleExport()}
+            >
+              导出日志
+            </Button>
+          </Auth>
         </div>
         <div className={styles.tableCardBody}>
           <Table

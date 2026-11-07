@@ -1,12 +1,6 @@
 import styles from './index.module.less';
 
-import Search from '@/assets/svgs/Search.svg?react';
-import Freshen from '@/assets/svgs/Freshen.svg?react';
-import Add from '@/assets/svgs/Add.svg?react';
-import Delete from '@/assets/svgs/Delete.svg?react';
-import Update from '@/assets/svgs/Update.svg?react';
-import Save from '@/assets/svgs/Save.svg?react';
-import Expand from '@/assets/svgs/Expand.svg?react';
+import Icon from '@/components/Icon';
 import {
   Button,
   Col,
@@ -185,7 +179,7 @@ const Dept: React.FC = () => {
               className={styles.actionLink}
               type="link"
               size="small"
-              icon={<Update width={16} height={16} />}
+              icon={<Icon icon="mdi:pencil-outline" size={16} />}
               onClick={() => getDeptByIdInfo(record.deptId)}
             >
               编辑
@@ -199,7 +193,7 @@ const Dept: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
+              <Button type="link" size="small" danger icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
                 删除
               </Button>
             </Popconfirm>
@@ -210,7 +204,7 @@ const Dept: React.FC = () => {
               className={styles.actionLink}
               type="link"
               size="small"
-              icon={<Add width={16} height={16} />}
+              icon={<Icon icon="mdi:plus" size={16} />}
               onClick={() => handleAddChild(record.deptId)}
             >
               添加子部门
@@ -356,12 +350,12 @@ const Dept: React.FC = () => {
                 <div className={styles.searchActions}>
                   <Button
                     type="primary"
-                    icon={<Search width={16} height={16} />}
+                    icon={<Icon icon="mdi:magnify" size={16} />}
                     onClick={handleSearch}
                   >
                     搜索
                   </Button>
-                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                  <Button icon={<Icon icon="mdi:refresh" size={16} />} onClick={handleResetSearch}>
                     重置
                   </Button>
                 </div>
@@ -382,7 +376,7 @@ const Dept: React.FC = () => {
             <Auth permission={'system:dept:add'}>
               <Button
                 className={styles.toolButton}
-                icon={<Add width={16} height={16} />}
+                icon={<Icon icon="mdi:plus" size={16} />}
                 onClick={showModal}
               >
                 新增
@@ -391,7 +385,7 @@ const Dept: React.FC = () => {
             <Auth permission={'system:dept:saveSort'}>
               <Button
                 className={styles.toolButton}
-                icon={<Save width={16} height={16} />}
+                icon={<Icon icon="mdi:content-save-outline" size={16} />}
                 onClick={handleBatchSaveSort}
               >
                 保存排序
@@ -399,7 +393,7 @@ const Dept: React.FC = () => {
             </Auth>
             <Button
               className={styles.toolButton}
-              icon={<Expand width={16} height={16} />}
+              icon={<Icon icon="mdi:arrow-expand-vertical" size={16} />}
               onClick={handleExpandToggle}
             >
               展开/折叠

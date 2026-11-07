@@ -1,10 +1,7 @@
 import * as React from 'react';
 import styles from './index.module.less';
 
-import Search from '@/assets/svgs/Search.svg?react';
-import Freshen from '@/assets/svgs/Freshen.svg?react';
-import Download from '@/assets/svgs/Download.svg?react';
-import Delete from '@/assets/svgs/Delete.svg?react';
+import Icon from '@/components/Icon';
 import {
   App,
   Button,
@@ -36,6 +33,7 @@ import { useDict } from '@/hooks/useDict.ts';
 import { DATE_FORMAT, DICT_TYPE, PAGINATION } from '@/constants';
 import DictTag from '@/components/DictTag';
 import JsonViewer from '@/components/JsonViewer';
+import Auth from '@/components/Auth';
 import { PaginationState } from '@/types/common.ts';
 import { downloadFile, getFileNameFromDisposition } from '@/utils/download.ts';
 
@@ -423,12 +421,12 @@ const OperationLog: React.FC = () => {
                 <div className={styles.searchActions}>
                   <Button
                     type="primary"
-                    icon={<Search width={16} height={16} />}
+                    icon={<Icon icon="mdi:magnify" size={16} />}
                     onClick={handleSearch}
                   >
                     搜索
                   </Button>
-                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                  <Button icon={<Icon icon="mdi:refresh" size={16} />} onClick={handleResetSearch}>
                     重置
                   </Button>
                 </div>
@@ -456,7 +454,7 @@ const OperationLog: React.FC = () => {
             >
               <Button
                 className={styles.dangerButton}
-                icon={<Delete width={16} height={16} />}
+                icon={<Icon icon="mdi:trash-can-outline" size={16} />}
                 disabled={selectedRowKeys.length === 0}
                 loading={deleting}
               >
@@ -475,13 +473,15 @@ const OperationLog: React.FC = () => {
                 清空
               </Button>
             </Popconfirm>
-            <Button
-              className={styles.toolButton}
-              icon={<Download width={16} height={16} />}
-              onClick={handleExport}
-            >
-              导出
-            </Button>
+            <Auth permission={'system:operationLog:export'}>
+              <Button
+                className={styles.toolButton}
+                icon={<Icon icon="mdi:download" size={16} />}
+                onClick={handleExport}
+              >
+                导出
+              </Button>
+            </Auth>
           </Space>
         </div>
         <div className={styles.tableCardBody}>

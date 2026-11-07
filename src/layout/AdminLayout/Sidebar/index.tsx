@@ -7,9 +7,9 @@ import { setCollapsed } from '@/store/modules/layout.ts';
 import { useDispatch } from 'react-redux';
 import type { MenuProps } from 'antd';
 import logo from '@/assets/images/logo.svg';
-import { HomeOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MenuItem } from '@/store/modules/permission.ts';
+import Icon from '@/components/Icon';
 
 type AntdMenuItem = Required<MenuProps>['items'][number];
 
@@ -25,7 +25,8 @@ const Sidebar: React.FC = () => {
     return menus.map((menuItem) => ({
       key: menuItem.key!,
       label: menuItem.label,
-      icon: <HomeOutlined />,
+      // icon: <HomeOutlined />,
+      icon: menuItem.icon ? <Icon icon={menuItem.icon} size={18} /> : undefined,
       children: menuItem.children?.length ? convertMenuItems(menuItem.children) : undefined,
     }));
   };

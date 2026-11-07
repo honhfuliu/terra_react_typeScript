@@ -22,8 +22,7 @@ import storage from '@/utils/storage.ts';
 import { STORAGE_KEY } from '@/constants';
 import Search from '@/layout/AdminLayout/Header/Search';
 import NoticeBell from '@/layout/AdminLayout/Header/NoticeBell';
-import GERENZHONGXIN from '@/assets/svgs/GERENZHONGXIN.svg?react';
-import Exit from '@/assets/svgs/Exit.svg?react';
+import Icon from '@/components/Icon';
 import { resetViews } from '@/store/modules/tagView.ts';
 import useFullscreen from '@/hooks/useFullscreen';
 import { Meta } from '@/types/route.ts';
@@ -108,7 +107,7 @@ const Header: React.FC = () => {
     {
       key: '4',
       label: '个人设置',
-      icon: <GERENZHONGXIN width={16} height={16} />,
+      icon: <Icon icon="mdi:account-circle-outline" size={16} />,
       onClick: () => {
         navigate('/profile');
       },
@@ -116,7 +115,7 @@ const Header: React.FC = () => {
     {
       key: '5',
       label: '退出登录',
-      icon: <Exit width={16} height={16} />,
+      icon: <Icon icon="mdi:logout" size={16} />,
     },
   ];
   const languages: MenuProps['items'] = [

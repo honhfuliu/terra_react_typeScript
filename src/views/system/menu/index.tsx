@@ -18,13 +18,7 @@ import {
   TableColumnsType,
   TreeSelect,
 } from 'antd';
-import Search from '@/assets/svgs/Search.svg?react';
-import Freshen from '@/assets/svgs/Freshen.svg?react';
-import Add from '@/assets/svgs/Add.svg?react';
-import Delete from '@/assets/svgs/Delete.svg?react';
-import Update from '@/assets/svgs/Update.svg?react';
-import Save from '@/assets/svgs/Save.svg?react';
-import Expand from '@/assets/svgs/Expand.svg?react';
+import Icon from '@/components/Icon';
 import { useCallback, useEffect, useState } from 'react';
 import {
   addMenu,
@@ -44,6 +38,7 @@ import { COMMON_STATUS, DICT_TYPE, MENU_TYPE } from '@/constants';
 import DictTag from '@/components/DictTag';
 import Auth from '@/components/Auth';
 import { FilterOutlined } from '@ant-design/icons';
+import IconSelect from '@/components/IconSelect';
 
 const Menu: React.FC = () => {
   const statusOptions = useDict(DICT_TYPE.SYS_STATUS); // 状态
@@ -188,7 +183,7 @@ const Menu: React.FC = () => {
               className={styles.actionLink}
               type="link"
               size="small"
-              icon={<Update width={16} height={16} />}
+              icon={<Icon icon="mdi:pencil-outline" size={16} />}
               onClick={() => getMenuByIdInfo(record.menuId)}
             >
               编辑
@@ -200,7 +195,7 @@ const Menu: React.FC = () => {
                 className={styles.actionLink}
                 type="link"
                 size="small"
-                icon={<Add width={16} height={16} />}
+                icon={<Icon icon="mdi:plus" size={16} />}
                 onClick={() => handleAddChild(record.menuId)}
               >
                 添加子菜单
@@ -215,7 +210,7 @@ const Menu: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
+              <Button type="link" size="small" danger icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
                 删除
               </Button>
             </Popconfirm>
@@ -384,12 +379,12 @@ const Menu: React.FC = () => {
                 <div className={styles.searchActions}>
                   <Button
                     type="primary"
-                    icon={<Search width={16} height={16} />}
+                    icon={<Icon icon="mdi:magnify" size={16} />}
                     onClick={handleSearch}
                   >
                     搜索
                   </Button>
-                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                  <Button icon={<Icon icon="mdi:refresh" size={16} />} onClick={handleResetSearch}>
                     重置
                   </Button>
                 </div>
@@ -410,7 +405,7 @@ const Menu: React.FC = () => {
             <Auth permission={'system:menu:add'}>
               <Button
                 className={styles.toolButton}
-                icon={<Add width={16} height={16} />}
+                icon={<Icon icon="mdi:plus" size={16} />}
                 onClick={handleAdd}
               >
                 新增
@@ -419,7 +414,7 @@ const Menu: React.FC = () => {
             <Auth permission={'system:menu:saveSort'}>
               <Button
                 className={styles.toolButton}
-                icon={<Save width={16} height={16} />}
+                icon={<Icon icon="mdi:content-save-outline" size={16} />}
                 onClick={handleBatchSaveSort}
               >
                 保存排序
@@ -427,7 +422,7 @@ const Menu: React.FC = () => {
             </Auth>
             <Button
               className={styles.toolButton}
-              icon={<Expand width={16} height={16} />}
+              icon={<Icon icon="mdi:arrow-expand-vertical" size={16} />}
               onClick={handleExpandToggle}
             >
               展开/折叠
@@ -516,7 +511,7 @@ const Menu: React.FC = () => {
                   {(menuType === MENU_TYPE.DIR || menuType === MENU_TYPE.MENU) && (
                     <Col xs={24} md={12}>
                       <Form.Item<MenuAddType> label="菜单图标" name="icon">
-                        <Input placeholder="请输入菜单图标" />
+                        <IconSelect />
                       </Form.Item>
                     </Col>
                   )}

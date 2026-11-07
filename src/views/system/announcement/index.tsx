@@ -1,9 +1,7 @@
 import * as React from 'react';
 import styles from './index.module.less';
 
-import Search from '@/assets/svgs/Search.svg?react';
-import Freshen from '@/assets/svgs/Freshen.svg?react';
-import Add from '@/assets/svgs/Add.svg?react';
+import Icon from '@/components/Icon';
 import {
   App,
   Button,
@@ -570,12 +568,12 @@ const Announcement: React.FC = () => {
                 <div className={styles.searchActions}>
                   <Button
                     type="primary"
-                    icon={<Search width={16} height={16} />}
+                    icon={<Icon icon="mdi:magnify" size={16} />}
                     onClick={handleSearch}
                   >
                     搜索
                   </Button>
-                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                  <Button icon={<Icon icon="mdi:refresh" size={16} />} onClick={handleResetSearch}>
                     重置
                   </Button>
                 </div>
@@ -596,7 +594,7 @@ const Announcement: React.FC = () => {
             <Auth permission={'system:notice:add'}>
               <Button
                 className={styles.toolButton}
-                icon={<Add width={16} height={16} />}
+                icon={<Icon icon="mdi:plus" size={16} />}
                 onClick={handleAdd}
               >
                 新增公告

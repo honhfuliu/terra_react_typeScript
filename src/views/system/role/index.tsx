@@ -23,12 +23,7 @@ import {
   TreeDataNode,
   TreeProps,
 } from 'antd';
-import Search from '@/assets/svgs/Search.svg?react';
-import Add from '@/assets/svgs/Add.svg?react';
-import Delete from '@/assets/svgs/Delete.svg?react';
-import Download from '@/assets/svgs/Download.svg?react';
-import Freshen from '@/assets/svgs/Freshen.svg?react';
-import Update from '@/assets/svgs/Update.svg?react';
+import Icon from '@/components/Icon';
 import { useEffect, useState } from 'react';
 import TextArea from 'antd/es/input/TextArea';
 import { MenuNode, menuOptions } from '@/service/menu.ts';
@@ -190,7 +185,7 @@ const Role: React.FC = () => {
             <Button
               type="link"
               size="small"
-              icon={<Update width={16} height={16} />}
+              icon={<Icon icon="mdi:pencil-outline" size={16} />}
               onClick={() => getRoleByIdInfo(record.roleId)}
             >
               编辑
@@ -204,7 +199,7 @@ const Role: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger icon={<Delete width={16} height={16} />}>
+              <Button type="link" size="small" danger icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
                 删除
               </Button>
             </Popconfirm>
@@ -501,12 +496,12 @@ const Role: React.FC = () => {
                 <div className={styles.searchActions}>
                   <Button
                     type="primary"
-                    icon={<Search width={16} height={16} />}
+                    icon={<Icon icon="mdi:magnify" size={16} />}
                     onClick={handleSearch}
                   >
                     搜索
                   </Button>
-                  <Button icon={<Freshen width={16} height={16} />} onClick={handleResetSearch}>
+                  <Button icon={<Icon icon="mdi:refresh" size={16} />} onClick={handleResetSearch}>
                     重置
                   </Button>
                 </div>
@@ -528,7 +523,7 @@ const Role: React.FC = () => {
               <Button
                 className={styles.toolButton}
                 onClick={() => openRoleModal()}
-                icon={<Add width={16} height={16} />}
+                icon={<Icon icon="mdi:plus" size={16} />}
               >
                 新增
               </Button>
@@ -541,18 +536,20 @@ const Role: React.FC = () => {
                 okText="确定"
                 cancelText="取消"
               >
-                <Button className={styles.toolButton} icon={<Delete width={16} height={16} />}>
+                <Button className={styles.toolButton} icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
                   删除
                 </Button>
               </Popconfirm>
             </Auth>
-            <Button
-              className={styles.toolButton}
-              icon={<Download width={16} height={16} />}
-              onClick={() => handleExport()}
-            >
-              导出
-            </Button>
+            <Auth permission={'system:role:export'}>
+              <Button
+                className={styles.toolButton}
+                icon={<Icon icon="mdi:download" size={16} />}
+                onClick={() => handleExport()}
+              >
+                导出
+              </Button>
+            </Auth>
           </Space>
         </div>
         <div className={styles.tableCardBody}>

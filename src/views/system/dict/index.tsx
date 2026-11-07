@@ -20,11 +20,7 @@ import {
 } from 'antd';
 import { useEffect, useState } from 'react';
 import TextArea from 'antd/es/input/TextArea';
-import SearchIcon from '@/assets/svgs/Search.svg?react';
-import DictIcon from '@/assets/svgs/Dict.svg?react';
-import AddIcon from '@/assets/svgs/Add.svg?react';
-import UpdateIcon from '@/assets/svgs/Update.svg?react';
-import DeleteIcon from '@/assets/svgs/Delete.svg?react';
+import Icon from '@/components/Icon';
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import {
   addDictData,
@@ -143,7 +139,7 @@ const Dict: React.FC = () => {
             <Button
               type="link"
               size="small"
-              icon={<UpdateIcon width={14} height={14} />}
+              icon={<Icon icon="mdi:pencil-outline" size={14} />}
               aria-label={`修改-${record.dictLabel}`}
               onClick={() => handleEditDictData(record)}
             >
@@ -162,7 +158,7 @@ const Dict: React.FC = () => {
                 type="link"
                 size="small"
                 danger
-                icon={<DeleteIcon width={14} height={14} />}
+                icon={<Icon icon="mdi:trash-can-outline" size={14} />}
                 aria-label={`删除-${record.dictLabel}`}
               >
                 删除
@@ -379,14 +375,14 @@ const Dict: React.FC = () => {
               </div>
               <Auth permission={'system:dict:type:add'}>
                 <div className={styles.addButton} title="新增字典" onClick={handleAddDictType}>
-                  <AddIcon width={16} height={16} />
+                  <Icon icon="mdi:plus" size={16} />
                 </div>
               </Auth>
             </div>
 
             <div className={styles.searchWrap}>
               <Input
-                prefix={<SearchIcon width={16} height={16} />}
+                prefix={<Icon icon="mdi:magnify" size={16} />}
                 placeholder="搜索字典名称或编码"
                 allowClear
                 value={searchText}
@@ -402,7 +398,7 @@ const Dict: React.FC = () => {
                   onClick={() => setActiveDictId(item.dictId)}
                 >
                   <div className={styles.dictIcon}>
-                    <DictIcon />
+                    <Icon icon="mdi:book-open-variant" />
                   </div>
                   <div className={styles.dictInfo}>
                     <div className={styles.dictName}>{item.dictName}</div>
