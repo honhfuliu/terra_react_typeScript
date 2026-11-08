@@ -1,0 +1,316 @@
+// AI 模型提供商配置页样式（支持亮色 / 暗色主题切换）
+// 布局：双卡片结构 —— 上方「筛选条件」卡片 + 下方「提供商列表」卡片
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// 卡片通用样式
+.searchCard,
+.tableCard {
+  background: var(--container-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+}
+
+// 筛选卡片头部：图标 + 标题 + 副标题
+.searchCardHeader {
+  padding: 16px 20px 0;
+}
+
+.titleWrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.titleIcon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary-color);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.cardSubtitle {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+}
+
+.searchCardBody {
+  padding: 14px 20px 20px;
+}
+
+// 筛选表单：输入框 + 下拉 + 查询/重置按钮
+.filterForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+
+  :global(.ant-form-item) {
+    margin-bottom: 0;
+  }
+
+  :global(.ant-select) {
+    width: 100%;
+  }
+}
+
+.keywordItem {
+  width: 300px;
+  max-width: 100%;
+}
+
+.protocolItem {
+  width: 220px;
+  max-width: 100%;
+}
+
+.filterActions {
+  flex-shrink: 0;
+}
+
+// 列表卡片头部：左侧标题块 + 右侧新增按钮
+.tableCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px 18px;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  .cardTitle {
+    font-size: 18px;
+  }
+}
+
+// 列表卡片主体
+.tableCardBody {
+  padding: 0 20px 20px;
+
+  :global(.ant-table) {
+    font-size: 14px;
+  }
+
+  :global(.ant-table-thead > tr > th) {
+    background: #f7f9fa;
+    font-weight: 600;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  :global(.ant-table-tbody > tr > td) {
+    padding: 12px 16px;
+  }
+
+  :global(.ant-pagination) {
+    margin: 16px 0 0;
+  }
+}
+
+// 暗色主题下表头背景
+:global([data-theme='dark']) {
+  .tableCardBody {
+    :global(.ant-table-thead > tr > th) {
+      background: rgba(255, 255, 255, 0.04);
+    }
+  }
+}
+
+// 提供商单元格：名称 + 编码（后端列表无图标）
+.providerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.providerName {
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.providerCode {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+// API 地址标签
+.apiUrl {
+  display: inline-block;
+  max-width: 100%;
+  padding: 2px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--search-bg);
+  color: var(--text-color-secondary);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+// 接入协议标签
+.protocolTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 4px;
+  background: rgba(22, 119, 255, 0.1);
+  color: var(--primary-color);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+// API Key 单元格
+.apiKeyCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.apiKeyIcon {
+  color: var(--text-color-secondary);
+  flex-shrink: 0;
+}
+
+.apiKeyText {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apiKeyEmpty {
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+// 状态单元格：启用状态 + 默认标记
+.statusCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.statusEnabled {
+  background: rgba(82, 196, 26, 0.12);
+  color: #52c41a;
+}
+
+.statusDisabled {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-color-secondary);
+}
+
+.defaultBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+// 操作列：编辑 / 删除链接
+.actionLinks {
+  :global(.ant-btn-link) {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 4px;
+    height: auto;
+  }
+}
+
+// 弹窗表单
+.modalBody {
+  padding-top: 4px;
+
+  :global(.ant-form-item) {
+    margin-bottom: 18px;
+  }
+}
+
+// 暗色主题
+:global([data-theme='dark']) {
+  .statusDisabled {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+@media (max-width: 575px) {
+  .layout {
+    gap: 12px;
+  }
+
+  .searchCard,
+  .tableCard {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .searchCardHeader {
+    padding: 14px 14px 0;
+  }
+
+  .searchCardBody {
+    padding: 12px 14px 16px;
+  }
+
+  .tableCardHeader {
+    padding: 14px 14px;
+  }
+
+  .tableCardBody {
+    padding: 0 14px 16px;
+  }
+
+  .keywordItem,
+  .protocolItem {
+    width: 100%;
+  }
+
+  .filterActions {
+    width: 100%;
+  }
+}
