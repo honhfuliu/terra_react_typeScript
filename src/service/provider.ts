@@ -85,3 +85,19 @@ export const deleteProvider = async (id: number) => {
     throw e;
   }
 };
+
+// 提供商下拉选项（id + 名称）
+export type ProviderOption = {
+  id: number;
+  providerName: string;
+};
+
+// 获取提供商下拉选项
+export const getProviderOptions = async () => {
+  try {
+    return await request.get<ProviderOption[]>('/ai/provider/options');
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};

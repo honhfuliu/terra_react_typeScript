@@ -131,9 +131,8 @@ const Provider: React.FC = () => {
     setModalOpen(true);
   };
 
-  // 打开编辑弹窗（回填当前行数据）
+  // 打开编辑弹窗（回填当前行数据，API Key 不回填，留空表示不修改）
   const handleEdit = (record: ProviderRow) => {
-    console.log('record', record);
     setEditingId(record.id);
     providerForm.resetFields();
     providerForm.setFieldsValue({
@@ -141,7 +140,6 @@ const Provider: React.FC = () => {
       providerCode: record.providerCode,
       apiBaseUrl: record.apiBaseUrl,
       protocol: record.protocol,
-      apiKey: record.apiKey,
       remark: record.remark,
       enabled: record.enabled,
       isDefault: record.isDefault,
@@ -301,14 +299,14 @@ const Provider: React.FC = () => {
               编辑
             </Button>
           </Auth>
-          <Popconfirm
-            title="确认删除"
-            description={`确定要删除「${record.providerName}」吗？`}
-            okText="确定"
-            cancelText="取消"
-            onConfirm={() => handleDelete(record)}
-          >
-            <Auth permission={'ai:provider:delete'}>
+          <Auth permission={'ai:provider:delete'}>
+            <Popconfirm
+              title="确认删除"
+              description={`确定要删除「${record.providerName}」吗？删除后该提供商下的模型配置也会一并删除。`}
+              okText="确定"
+              cancelText="取消"
+              onConfirm={() => handleDelete(record)}
+            >
               <Button
                 type="link"
                 size="small"
@@ -317,8 +315,8 @@ const Provider: React.FC = () => {
               >
                 删除
               </Button>
-            </Auth>
-          </Popconfirm>
+            </Popconfirm>
+          </Auth>
         </Space>
       ),
     },
@@ -464,8 +462,16 @@ const Provider: React.FC = () => {
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item<ProviderFormValues> label="API Key" name="apiKey">
-                  <Input.Password placeholder="请输入 API Key" />
+                <Form.Item<ProviderFormValues>
+                  label="API Key"
+                  name="apiKey"
+                  extra={editingId !== null ? '当前已配置密钥，留空则保持不变' : '本地服务可留空'}
+                >
+                  <Input.Password
+                    placeholder={
+                      editingId !== null ? '若不修改 API Key 请留空' : '请输入 API Key'
+                    }
+                  />
                 </Form.Item>
               </Col>
               <Col span={24}>
