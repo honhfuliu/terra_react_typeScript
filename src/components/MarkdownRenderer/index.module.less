@@ -1,0 +1,270 @@
+.markdown {
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin: 0 0 12px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 18px 0 10px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  h3 {
+    font-size: 16px;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: 14px;
+  }
+
+  ul,
+  ol {
+    margin: 8px 0 12px;
+    padding-left: 24px;
+  }
+
+  li {
+    margin: 4px 0;
+  }
+
+  li > p {
+    margin: 0;
+  }
+
+  a {
+    color: var(--primary-color);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  blockquote {
+    margin: 12px 0;
+    padding: 8px 12px;
+    border-left: 3px solid var(--primary-color);
+    border-radius: 0 6px 6px 0;
+    background: rgba(22, 119, 255, 0.06);
+    color: var(--text-color-secondary);
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // 行内代码（代码块内的 code 由 .codeBlock 覆盖）
+  code {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.06);
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+  }
+
+  pre {
+    margin: 12px 0;
+    overflow-x: auto;
+  }
+
+  table {
+    display: block;
+    width: 100%;
+    margin: 12px 0;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    text-align: left;
+  }
+
+  th {
+    background: var(--menu-hover);
+    font-weight: 600;
+  }
+
+  hr {
+    margin: 16px 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  img {
+    max-width: 100%;
+    border-radius: 6px;
+  }
+
+  // 亮色主题
+  &.light {
+    :global {
+      @import 'highlight.js/styles/github.css';
+    }
+
+    code {
+      color: #476582;
+    }
+
+    pre {
+      background: #f6f8fa;
+    }
+  }
+
+  // 暗色主题
+  &.dark {
+    :global {
+      @import 'highlight.js/styles/github-dark.css';
+    }
+
+    code {
+      color: #c9d1d9;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    blockquote {
+      background: rgba(105, 177, 255, 0.08);
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.06);
+    }
+  }
+}
+
+/* ============ 代码块容器 ============ */
+.codeBlock {
+  margin: 12px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f6f8fa;
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px 6px 14px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.03);
+
+    :global(.ant-btn) {
+      height: 24px;
+      padding: 0 8px;
+      font-size: 12px;
+      color: var(--text-color-secondary);
+
+      &:hover {
+        color: var(--primary-color) !important;
+        background: rgba(22, 119, 255, 0.08) !important;
+      }
+    }
+  }
+
+  .language {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-color-secondary);
+  }
+
+  pre {
+    margin: 0;
+    padding: 14px 16px;
+    overflow-x: auto;
+    background: transparent;
+
+    code {
+      display: block;
+      padding: 0;
+      background: transparent;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    // 细滚动条，避免暗色下过于突兀
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.18);
+    }
+  }
+}
+
+/* 亮色 */
+.light {
+  .codeBlock {
+    background: #f6f8fa;
+    border-color: #e5e6eb;
+
+    .header {
+      background: #eaeef2;
+      border-bottom-color: #dde3ea;
+    }
+  }
+}
+
+/* 暗色 */
+.dark {
+  .codeBlock {
+    background: #0d1117;
+    border-color: rgba(255, 255, 255, 0.1);
+
+    .header {
+      background: #161b22;
+      border-bottom-color: rgba(255, 255, 255, 0.1);
+
+      :global(.ant-btn) {
+        color: #8b949e;
+
+        &:hover {
+          color: #69b1ff !important;
+          background: rgba(105, 177, 255, 0.12) !important;
+        }
+      }
+    }
+
+    .language {
+      color: #8b949e;
+    }
+
+    pre::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+    }
+  }
+}

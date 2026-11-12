@@ -1,5 +1,12 @@
 // 日期工具
 
+// 解析后端日期时间字符串（如 "2026-11-10 21:25:14"），解析失败时返回当前时间
+export const parseDateTime = (value?: string) => {
+  if (!value) return Date.now();
+  const time = new Date(value.replace(/-/g, '/')).getTime();
+  return Number.isNaN(time) ? Date.now() : time;
+};
+
 // 将剩余秒数格式化为「x小时x分」
 export const formatTimeout = (seconds: number) => {
   if (!seconds || seconds <= 0) return '已超时';
