@@ -146,7 +146,7 @@ const Profile: React.FC = () => {
   };
   const handleUploadSuccess = (url: string) => {
     setImageUrl(url);
-    console.log('上传成功，图片地址：', url);
+    // console.log('上传成功，图片地址：', url);
   };
   return (
     <div className={styles.profilePage}>

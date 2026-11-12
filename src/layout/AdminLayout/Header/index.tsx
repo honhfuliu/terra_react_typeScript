@@ -40,7 +40,7 @@ const Header: React.FC = () => {
   // 全屏
   const { isFullscreen, toggleFullscreen } = useFullscreen();
   const matches = useMatches() as UIMatch<unknown, Meta>[];
-  console.log('matches', matches);
+  // console.log('matches', matches);
   // 获取当前匹配路由的标题
   const breadcrumbItem = React.useMemo(() => {
     const routeItems = matches

@@ -90,7 +90,7 @@ const Dept: React.FC = () => {
   };
   // 表格顺序调整
   const handleSortChange = (value: number, record: DeptTable) => {
-    console.log(value, record);
+    // console.log(value, record);
     const updateTreeData = (treeData: DeptTable[]): DeptTable[] => {
       return treeData.map((item) => {
         // 如果是当前匹配的节点，更新 sortOrder
@@ -115,7 +115,7 @@ const Dept: React.FC = () => {
   };
   // 保存排序
   const handleBatchSaveSort = async () => {
-    console.log('deptTreeList', deptTreeList);
+    // console.log('deptTreeList', deptTreeList);
     try {
       await updateBatchDeptSort(deptTreeList);
       message.success('保存成功');
@@ -193,7 +193,12 @@ const Dept: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<Icon icon="mdi:trash-can-outline" size={16} />}
+              >
                 删除
               </Button>
             </Popconfirm>
@@ -252,7 +257,7 @@ const Dept: React.FC = () => {
     try {
       values = await deptForm.validateFields();
     } catch (error) {
-      console.log('表单校验失败：', error);
+      console.error('表单校验失败：', error);
       return;
     }
     try {
@@ -462,11 +467,7 @@ const Dept: React.FC = () => {
                       }}
                       placeholder="请选择上级菜单"
                       treeDefaultExpandAll
-                      onChange={(value, labelList, extra) => {
-                        console.log(extra);
-                        console.log(value);
-                        console.log(labelList);
-                      }}
+                      onChange={() => {}}
                     />
                   </Form.Item>
                 </Col>

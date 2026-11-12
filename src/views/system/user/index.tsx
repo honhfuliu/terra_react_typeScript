@@ -197,7 +197,7 @@ const User: React.FC = () => {
     try {
       values = await resetPasswordForm.validateFields();
     } catch (e) {
-      console.log('表单校验失败：', e);
+      console.error('表单校验失败：', e);
       return;
     }
     try {
@@ -266,7 +266,12 @@ const User: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<Icon icon="mdi:trash-can-outline" size={16} />}
+              >
                 删除
               </Button>
             </Popconfirm>
@@ -340,7 +345,7 @@ const User: React.FC = () => {
         total: data.total,
       }));
 
-      console.log(data);
+      // console.log(data);
     } catch (e) {
       console.error(e);
     }
@@ -408,7 +413,7 @@ const User: React.FC = () => {
   };
   // 选中节点
   const handleSelect: TreeProps['onSelect'] = async (keys) => {
-    console.log(keys);
+    // console.log(keys);
     setSelectedKeys(keys);
     await getUserList(PAGINATION.DEFAULT_PAGE_NUM, pagination.pageSize, keys?.[0]);
   };
@@ -503,7 +508,11 @@ const User: React.FC = () => {
             onClick={() => setTreeCollapsed((prev) => !prev)}
             aria-label={treeCollapsed ? '展开组织机构' : '收起组织机构'}
           >
-            {treeCollapsed ? <Icon icon="mdi:chevron-double-right" size={12} /> : <Icon icon="mdi:chevron-double-left" size={12} />}
+            {treeCollapsed ? (
+              <Icon icon="mdi:chevron-double-right" size={12} />
+            ) : (
+              <Icon icon="mdi:chevron-double-left" size={12} />
+            )}
           </Button>
         </div>
 
@@ -617,7 +626,10 @@ const User: React.FC = () => {
                     okText="确定"
                     cancelText="取消"
                   >
-                    <Button className={styles.toolButton} icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
+                    <Button
+                      className={styles.toolButton}
+                      icon={<Icon icon="mdi:trash-can-outline" size={16} />}
+                    >
                       删除
                     </Button>
                   </Popconfirm>
@@ -661,6 +673,7 @@ const User: React.FC = () => {
         title={modalTitle}
         width={screens.md ? 760 : 'calc(100vw - 32px)'}
         open={modalOpen}
+        forceRender
         onCancel={handleModalCancel}
         footer={[
           <Button key="cancel" onClick={handleModalCancel}>
@@ -787,6 +800,7 @@ const User: React.FC = () => {
         title={'重置密码'}
         width={400}
         open={resetPasswordModalOpen}
+        forceRender
         onCancel={handleResetPasswordModalCancel}
         footer={[
           <Button key="cancel" onClick={handleResetPasswordModalCancel}>

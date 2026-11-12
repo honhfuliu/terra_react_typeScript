@@ -210,7 +210,12 @@ const Menu: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<Icon icon="mdi:trash-can-outline" size={16} />}
+              >
                 删除
               </Button>
             </Popconfirm>
@@ -284,7 +289,7 @@ const Menu: React.FC = () => {
     try {
       value = await menuForm.validateFields();
     } catch (e) {
-      console.log('表单校验失败：', e);
+      console.error('表单校验失败：', e);
       return;
     }
     try {
@@ -453,6 +458,7 @@ const Menu: React.FC = () => {
             title={modalTitle}
             closable={{ 'aria-label': 'Custom Close Button' }}
             open={isModalOpen}
+            forceRender
             onCancel={handleCancel}
             footer={[
               <Button key="cancel" onClick={handleCancel}>
@@ -486,11 +492,7 @@ const Menu: React.FC = () => {
                         }}
                         placeholder="请选择上级菜单"
                         treeDefaultExpandAll
-                        onChange={(value, labelList, extra) => {
-                          console.log(extra);
-                          console.log(value);
-                          console.log(labelList);
-                        }}
+                        onChange={() => {}}
                       />
                     </Form.Item>
                   </Col>

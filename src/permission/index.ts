@@ -10,7 +10,7 @@ export async function initPermission() {
     const data = await getRouters();
     // 获取当前用户权限
     const permissionData = await getUserPerms();
-    console.log('permissionData', permissionData);
+    // console.log('permissionData', permissionData);
     if (data && data.children && permissionData) {
       const menus = transformMenus(data.children);
       store.dispatch(
