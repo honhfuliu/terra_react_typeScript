@@ -1,3 +1,16 @@
+/**
+ * AI 对话页面
+ *
+ * 页面结构：左侧会话侧栏 + 右侧聊天区。
+ * 1. 侧栏：服务端分页拉取会话列表，支持搜索、滚动加载更多、重命名、删除；
+ * 2. 聊天区：消息列表 + 输入框，历史消息同样使用后端分页（按 id 倒序，第 1 页是最新一页）；
+ * 3. 发送消息使用 SSE 流式接口，按 start / chunk / complete / error 四类事件增量更新界面。
+ *
+ * 核心数据：
+ * - conversations：本地会话集合（渲染的唯一数据源），每个会话自带消息数组和分页状态；
+ * - sessions：侧栏的服务端分页数据，和 conversations 按 sessionId 合并后展示；
+ * - pendingId：正在等待 AI 回复的会话前端 id，用于禁用发送按钮、展示"回复中"状态。
+ */
 import * as React from 'react';
 import { App, Button, Drawer, Dropdown, Grid, Input, Select } from 'antd';
 import type { TextAreaRef } from 'antd/es/input/TextArea';
@@ -22,20 +35,23 @@ import {
   CHAT_MESSAGE_ROLE,
   ChatMessageDto,
   ChatMessageRole,
-  sendChatMessage,
+  streamChatMessage,
 } from '@/service/chat';
 
 // ===== 类型 =====
+
+// 单条消息（前端渲染使用，后端数字 id 统一转成 string 方便本地生成临时 id）
 interface ChatMessage {
-  id: string;
-  role: ChatMessageRole;
-  content: string;
-  createdAt: number;
+  id: string; // 本地临时 id（createId 生成）或后端消息 id
+  role: ChatMessageRole; // 角色：USER 用户 / ASSISTANT AI
+  content: string; // 消息内容，AI 消息为 Markdown 文本
+  createdAt: number; // 毫秒时间戳，用于展示 "HH:mm"
 }
 
+// 一个会话：包含消息列表、草稿状态和后端分页加载状态
 interface Conversation {
-  id: string; // 前端唯一 key
-  sessionId: number | null; // 后端会话 id，新建会话回复前为 null
+  id: string; // 前端唯一 key（侧栏/列表渲染用，和后端 sessionId 无关）
+  sessionId: number | null; // 后端会话 id，新建会话在收到 start 事件前为 null
   title: string; // 会话标题，后端返回前用首条消息截断
   createdAt: number;
   updatedAt: number;
@@ -49,16 +65,24 @@ interface Conversation {
   msgHasMore?: boolean; // 是否还有更早的历史消息
 }
 
-// 侧栏会话项（服务端分页数据 + 本地临时项合并后）
-interface SidebarSession {
-  key: string;
+// 流式事件 start 返回的数据：新会话 id、标题、以及落库后的用户消息
+interface StreamStartData {
   sessionId: number;
   title: string;
-  updatedAt: number;
-  pendingReply: boolean;
+  userMessage: ChatMessageDto;
+}
+
+// 侧栏会话项（服务端分页数据 + 本地临时项合并后）
+interface SidebarSession {
+  key: string; // React key
+  sessionId: number; // 后端会话 id
+  title: string; // 会话标题
+  updatedAt: number; // 更新时间戳，用于展示"刚刚/昨天/x 分钟前"
+  pendingReply: boolean; // 是否正在等待 AI 回复
 }
 
 // ===== 常量 =====
+// 时间换算常量，供会话列表展示相对时间使用
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
@@ -73,9 +97,15 @@ const SUGGESTIONS = [
 ];
 
 // ===== 工具 =====
+// 生成前端唯一 id：时间戳 + 自增序号，避免同一毫秒内重复
 let idSeed = 0;
 const createId = (prefix: string) => `${prefix}-${Date.now()}-${idSeed++}`;
 
+/**
+ * 格式化会话列表中显示的相对时间：
+ * 1 分钟内 -> 刚刚；1 小时内 -> x 分钟前；今天 -> HH:mm；昨天 -> 昨天；
+ * 一周内 -> 周几；更早 -> M 月 D 日
+ */
 const formatConversationTime = (timestamp: number) => {
   const now = new Date();
   const target = new Date(timestamp);
@@ -94,11 +124,13 @@ const formatConversationTime = (timestamp: number) => {
   return `${target.getMonth() + 1} 月 ${target.getDate()} 日`;
 };
 
+// 格式化消息气泡下方的时间：只展示时分
 const formatMessageTime = (timestamp: number) => {
   const d = new Date(timestamp);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
+// 新建一个草稿会话：draft=true 时不会出现在侧栏，发送首条消息后转正
 const createDraftConversation = (): Conversation => ({
   id: createId('conv'),
   sessionId: null,
@@ -109,7 +141,7 @@ const createDraftConversation = (): Conversation => ({
   draft: true,
 });
 
-// 后端消息 -> 页面消息
+// 后端消息结构 -> 前端渲染结构（id 转 string，时间字符串转时间戳）
 const toChatMessage = (item: ChatMessageDto): ChatMessage => ({
   id: String(item.id),
   role: item.role,
@@ -121,50 +153,65 @@ const toChatMessage = (item: ChatMessageDto): ChatMessage => ({
 const AiChat: React.FC = () => {
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
-  const isMobile = screens.md === false;
+  const isMobile = screens.md === false; // md 以下视为移动端：侧栏改为抽屉
 
-  // 会话集合（含 draft，侧栏渲染时过滤）
+  // ---- 会话与消息（本地数据源） ----
+  // 首次渲染先创建一个 draft 会话作为兜底，保证 activeConversation 永远存在
   const [initialConversation] = useState<Conversation>(createDraftConversation);
   const [conversations, setConversations] = useState<Conversation[]>(() => [initialConversation]);
-  const [activeId, setActiveId] = useState<string>(() => initialConversation.id);
+  const [activeId, setActiveId] = useState<string>(() => initialConversation.id); // 当前选中的会话前端 id
 
-  const [input, setInput] = useState('');
-  const [modelId, setModelId] = useState<number>();
-  const [modelOptions, setModelOptions] = useState<ChatModelOption[]>([]);
-  const [modelLoading, setModelLoading] = useState(true);
+  // ---- 输入框与模型选择 ----
+  const [input, setInput] = useState(''); // 输入框内容
+  const [modelId, setModelId] = useState<number>(); // 当前选中的模型 id
+  const [modelOptions, setModelOptions] = useState<ChatModelOption[]>([]); // 可选模型列表
+  const [modelLoading, setModelLoading] = useState(true); // 模型列表加载中
 
-  const [keyword, setKeyword] = useState('');
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const copyTimerRef = useRef<number | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  // ---- 交互状态 ----
+  const [keyword, setKeyword] = useState(''); // 侧栏搜索关键字
+  const [pendingId, setPendingId] = useState<string | null>(null); // 正在等待 AI 回复的会话前端 id
+  const [copiedId, setCopiedId] = useState<string | null>(null); // 刚复制过的消息 id，用于显示"已复制"
+  const copyTimerRef = useRef<number | null>(null); // "已复制"提示的定时器
+  const [collapsed, setCollapsed] = useState(false); // 桌面端侧栏是否收起
+  const [drawerOpen, setDrawerOpen] = useState(false); // 移动端抽屉是否打开
 
-  // 侧栏会话（服务端分页）
+  // ---- 侧栏会话（服务端分页） ----
   const [sessions, setSessions] = useState<SidebarSession[]>([]);
-  const [sessionTotal, setSessionTotal] = useState(0);
-  const [sessionPage, setSessionPage] = useState<number>(PAGINATION.DEFAULT_PAGE_NUM);
+  const [sessionTotal, setSessionTotal] = useState(0); // 服务端会话总数
+  const [sessionPage, setSessionPage] = useState<number>(PAGINATION.DEFAULT_PAGE_NUM); // 已加载到的页码
   const [sessionLoading, setSessionLoading] = useState(false);
-  const [sessionHasMore, setSessionHasMore] = useState(false);
-  const sessionLoadingRef = useRef(false);
+  const [sessionHasMore, setSessionHasMore] = useState(false); // 是否还有下一页
+  const sessionLoadingRef = useRef(false); // 同步锁，防止滚动事件重复触发请求
 
-  const listRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<TextAreaRef>(null);
-  const prependRef = useRef(false);
-  const prevScrollHeightRef = useRef(0);
+  // ---- DOM / 滚动相关 ----
+  const listRef = useRef<HTMLDivElement>(null); // 消息列表容器
+  const inputRef = useRef<TextAreaRef>(null); // 输入框实例，用于聚焦
+  const prependRef = useRef(false); // 本次渲染是否为"向上加载历史消息"（需要保持滚动位置）
+  const prevScrollHeightRef = useRef(0); // 前插历史消息前的滚动高度
+  // 会话 id -> 流式请求控制器，用于删除会话/卸载页面时中断
+  const streamControllersRef = useRef<Map<string, AbortController>>(new Map());
 
+  // ---- 派生值（每次渲染重新计算） ----
   const activeConversation = conversations.find((c) => c.id === activeId) ?? conversations[0];
-  const activeSessionId = activeConversation?.sessionId ?? null;
+  const activeSessionId = activeConversation?.sessionId ?? null; // 侧栏高亮用
   const messages = activeConversation?.messages ?? [];
-  const busy = pendingId !== null && pendingId === activeConversation?.id;
+  const busy = pendingId !== null && pendingId === activeConversation?.id; // 当前会话是否正在回复
+  // 最后一条消息内容长度：流式输出时用于跟随滚动
+  const lastMessageLength = messages.length ? messages[messages.length - 1].content.length : 0;
 
-  // 拉取会话分页数据
+  /**
+   * 拉取侧栏会话分页数据
+   * @param page 页码（从 1 开始）
+   * @param append 是否追加到已有列表（滚动加载更多）；false 表示整体替换（首屏 / 搜索）
+   */
   const fetchSessions = useCallback(
     async (page: number, append: boolean) => {
+      // ref 锁做同步防重：state 更新是异步的，滚动事件可能在请求未完成时再次触发
       if (sessionLoadingRef.current) return;
       sessionLoadingRef.current = true;
       setSessionLoading(true);
       try {
+        // keyword 传给后端做标题模糊搜索，空串时传 undefined
         const res = await getChatSessionPage({
           pageNum: page,
           pageSize: PAGINATION.DEFAULT_PAGE_SIZE,
@@ -177,6 +224,7 @@ const AiChat: React.FC = () => {
           updatedAt: parseDateTime(item.updateTime),
           pendingReply: false,
         }));
+        // append 模式下按 sessionId 去重追加，避免翻页时出现重复项
         setSessions((prev) => {
           if (!append) return rows;
           const exists = new Set(prev.map((s) => s.sessionId));
@@ -184,6 +232,7 @@ const AiChat: React.FC = () => {
         });
         setSessionTotal(res.total);
         setSessionPage(page);
+        // 已加载条数 < 总数 时说明还有下一页
         setSessionHasMore(page * PAGINATION.DEFAULT_PAGE_SIZE < res.total);
       } catch {
         message.error('会话列表加载失败');
@@ -206,6 +255,7 @@ const AiChat: React.FC = () => {
   // 侧栏展示项：服务端分页结果 + 本地刚创建但还没进入分页结果的会话
   const sidebarSessions = useMemo(() => {
     const serverIds = new Set(sessions.map((s) => s.sessionId));
+    // 1. 本地已有、但服务端分页结果里还没有的会话（如刚发出的新会话），先在侧栏顶部展示
     const localOnly: SidebarSession[] = conversations
       .filter((c) => !c.draft && c.sessionId !== null && !serverIds.has(c.sessionId))
       .map((c) => ({
@@ -215,16 +265,18 @@ const AiChat: React.FC = () => {
         updatedAt: c.updatedAt,
         pendingReply: !!c.pendingReply,
       }));
+    // 2. 服务端分页项，用本地会话的 pendingReply 覆盖"回复中"状态
     const serverItems = sessions.map((s) => ({
       ...s,
       pendingReply: !!conversations.find((c) => c.sessionId === s.sessionId)?.pendingReply,
     }));
     const merged = [...localOnly, ...serverItems];
+    // 3. 本地再按关键字过滤一次，保证新会话无需等接口返回也能即时筛选
     const value = keyword.trim().toLowerCase();
     return value ? merged.filter((s) => s.title.toLowerCase().includes(value)) : merged;
   }, [sessions, conversations, keyword]);
 
-  // 滚动到底部加载下一页
+  // 侧栏滚动到底部时加载下一页（距底部 24px 内触发）
   const handleSessionListScroll: React.UIEventHandler<HTMLDivElement> = (event) => {
     const el = event.currentTarget;
     if (!sessionHasMore || sessionLoadingRef.current) return;
@@ -233,7 +285,10 @@ const AiChat: React.FC = () => {
     }
   };
 
-  // 加载会话消息：后端按 id 倒序分页，第 1 页就是最新 10 条
+  /**
+   * 加载会话的第一页消息（最新 10 条）
+   * 后端按 id 倒序分页，所以第 1 页就是最新一页，直接替换 messages 即可
+   */
   const loadSessionMessages = async (conversationId: string, sessionId: number) => {
     setConversations((prev) =>
       prev.map((c) => (c.id === conversationId ? { ...c, msgLoading: true } : c)),
@@ -270,18 +325,23 @@ const AiChat: React.FC = () => {
     }
   };
 
-  // 向上加载更早的消息：页码递增，结果前插到列表头部
+  /**
+   * 向上加载更早的消息（页码 +1，结果前插到列表头部）
+   * 前插会让列表变高，为避免视口跳动，这里记录前插前的高度，
+   * 在渲染后的 scroll effect 中把 scrollTop 平移回原来的相对位置。
+   */
   const loadOlderMessages = useCallback(
     async (conversation: Conversation) => {
       const sessionId = conversation.sessionId;
       const page = conversation.msgPage ?? 0;
+      // 没有 sessionId、没有更多数据、或正在加载时不重复请求
       if (sessionId === null || !conversation.msgHasMore || conversation.msgLoading) return;
 
       const nextPage = page + 1;
       const total = conversation.msgTotal ?? 0;
       const el = listRef.current;
       prevScrollHeightRef.current = el?.scrollHeight ?? 0;
-      prependRef.current = true;
+      prependRef.current = true; // 标记本次是前插，滚动 effect 会走"保持位置"分支
 
       setConversations((prev) =>
         prev.map((c) => (c.id === conversation.id ? { ...c, msgLoading: true } : c)),
@@ -329,7 +389,7 @@ const AiChat: React.FC = () => {
     }
   };
 
-  // 拉取模型列表
+  // 拉取可选模型列表，成功后默认选中第一个（若之前选过且仍存在则保留）
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -352,25 +412,40 @@ const AiChat: React.FC = () => {
     };
   }, []);
 
-  // 断点切换互斥
+  // 断点切换时互斥侧栏与抽屉：移动端只用抽屉，桌面端只用可收起侧栏
   useEffect(() => {
     if (isMobile) setCollapsed(false);
     else setDrawerOpen(false);
   }, [isMobile]);
 
+  // 页面卸载时中断所有流式请求，避免卸载后仍往已销毁的组件里 setState
+  useEffect(() => {
+    const controllers = streamControllersRef.current;
+    return () => {
+      controllers.forEach((controller) => controller.abort());
+      controllers.clear();
+    };
+  }, []);
+
   // 消息列表滚动：新增消息时滚到底部；向上加载历史时保持当前位置
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
+    // 前插历史消息：用"新高度 - 旧高度"补偿 scrollTop，视觉上停留在原消息位置
     if (prependRef.current) {
       prependRef.current = false;
       el.scrollTop = el.scrollHeight - prevScrollHeightRef.current;
       return;
     }
+    // 流式输出中持续跟随到底部（直接赋值，避免每个 chunk 触发平滑滚动动画）
+    if (busy) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [activeId, messages.length, pendingId]);
+  }, [activeId, messages.length, lastMessageLength, busy]);
 
-  // 内容不足一屏时无法滚动，自动继续加载更早的消息
+  // 内容不足一屏时列表无法触发滚动事件，这里主动继续加载更早的消息
   useEffect(() => {
     const el = listRef.current;
     if (!el || !activeConversation) return;
@@ -385,15 +460,16 @@ const AiChat: React.FC = () => {
 
   // ===== 操作 =====
 
+  // 延迟聚焦：等 Input 完成渲染/更新后再 focus（新建会话、点击引导问题时使用）
   const focusInput = () => window.setTimeout(() => inputRef.current?.focus(), 0);
 
-  // 点击引导问题：填入输入框并聚焦
+  // 点击空对话的引导问题：填入输入框并聚焦
   const handleSuggestion = (text: string) => {
     setInput(text);
     focusInput();
   };
 
-  // 复制整条 AI 回复
+  // 复制整条 AI 回复，并短暂展示"已复制"状态（2 秒后还原）
   const handleCopyMessage = async (item: ChatMessage) => {
     try {
       await navigator.clipboard.writeText(item.content);
@@ -424,6 +500,7 @@ const AiChat: React.FC = () => {
       return;
     }
 
+    // 追加一个草稿会话并切换过去：draft 不显示在侧栏，发出首条消息后才转正
     const draft = createDraftConversation();
     setConversations((prev) => [...prev, draft]);
     setActiveId(draft.id);
@@ -433,13 +510,17 @@ const AiChat: React.FC = () => {
     focusInput();
   };
 
-  // 切换会话
+  // 切换当前会话（移动端顺带关闭抽屉）
   const handleSelect = (id: string) => {
     setActiveId(id);
     setDrawerOpen(false);
   };
 
-  // 点击侧栏会话：本地已打开则直接切换，否则新建会话容器并拉取消息
+  /**
+   * 点击侧栏会话：
+   * - 本地已有该会话：直接切换，若还没加载过消息则拉取第一页；
+   * - 本地没有：先创建会话容器（携带 sessionId），再拉取第一页消息。
+   */
   const handleSelectSession = (item: SidebarSession) => {
     const existing = conversations.find((c) => c.sessionId === item.sessionId);
     if (existing) {
@@ -462,8 +543,12 @@ const AiChat: React.FC = () => {
     void loadSessionMessages(conv.id, item.sessionId);
   };
 
-  // 删除会话
+  // 删除会话（纯本地）：只移除前端会话数据，不调用后端删除接口
   const handleDelete = (id: string) => {
+    // 中断该会话可能仍在进行的流式请求
+    streamControllersRef.current.get(id)?.abort();
+    streamControllersRef.current.delete(id);
+
     const remaining = conversations.filter((c) => c.id !== id);
     // 如果删的是当前会话，挑一个非 draft 的或第一个；都没有就补一个 draft
     if (activeId === id) {
@@ -475,7 +560,7 @@ const AiChat: React.FC = () => {
     if (pendingId === id) setPendingId(null);
   };
 
-  // 删除侧栏会话
+  // 删除侧栏会话：先调后端删除，再同步清理侧栏和本地会话；当前会话被删时自动新建草稿
   const handleDeleteSession = async (item: SidebarSession) => {
     try {
       // draft 会话 sessionId 为 null，只做本地清理，不调后端
@@ -503,7 +588,7 @@ const AiChat: React.FC = () => {
     }
   };
 
-  // 修改会话标题
+  // 修改会话标题：动态引入 Modal，确认后调用后端接口并同步侧栏与本地会话
   const handleRenameSession = async (item: SidebarSession) => {
     const { Modal } = await import('antd');
     Modal.confirm({
@@ -561,9 +646,49 @@ const AiChat: React.FC = () => {
     });
   };
 
-  // 发送消息
+  /**
+   * 同步侧栏会话列表（收到 start 事件、拿到真实 sessionId 后调用）
+   * - 已存在：更新标题与更新时间；
+   * - 不存在：作为新会话插到列表最前面。
+   */
+  const syncSessionSidebar = (sid: number, title: string) => {
+    setSessions((prev) => {
+      if (prev.some((s) => s.sessionId === sid)) {
+        return prev.map((s) =>
+          s.sessionId === sid ? { ...s, title: title || s.title, updatedAt: Date.now() } : s,
+        );
+      }
+      return [
+        {
+          key: `session-${sid}`,
+          sessionId: sid,
+          title,
+          updatedAt: Date.now(),
+          pendingReply: false,
+        },
+        ...prev,
+      ];
+    });
+  };
+
+  /**
+   * 发送消息（SSE 流式接收 AI 回复）
+   *
+   * 整体流程：
+   * 1. 校验内容、模型、是否正在回复；
+   * 2. 乐观更新：先插入用户消息 + 空的 AI 占位消息，界面立即响应；
+   * 3. 订阅 SSE 事件，按事件类型增量更新对应会话；
+   * 4. 结束后清理占位、解除 pending 状态。
+   *
+   * 事件语义：
+   * - start：返回真实 sessionId、会话标题、落库后的用户消息；
+   * - chunk：一段增量文本，追加到 AI 占位消息上形成打字机效果；
+   * - complete：完整的 AI 消息（真实 id、创建时间），用于替换占位消息；
+   * - error：服务端返回的错误信息。
+   */
   const handleSend = async () => {
     const content = input.trim();
+    // 空内容、正在回复、没有活动会话时不发送
     if (!content || busy || !activeConversation) return;
     if (modelId === undefined) {
       message.warning('请先选择模型');
@@ -571,16 +696,19 @@ const AiChat: React.FC = () => {
     }
 
     const conversationId = activeConversation.id;
-    const sessionId = activeConversation.sessionId;
+    const sessionId = activeConversation.sessionId; // null 表示新建会话
     const now = Date.now();
+    // 本地乐观用户消息（收到 start 事件后会被后端消息替换）
     const userMessage: ChatMessage = {
       id: createId('msg'),
       role: CHAT_MESSAGE_ROLE.USER,
       content,
       createdAt: now,
     };
+    // AI 回复占位消息 id：chunk / complete 事件都按这个 id 定位要更新的消息
+    const assistantMessageId = createId('msg');
 
-    // 乐观更新：先插入用户消息，draft 会话转正（侧栏开始显示）
+    // 乐观更新：先插入用户消息和回复占位，draft 会话转正（侧栏开始显示）
     setConversations((prev) =>
       prev.map((c) => {
         if (c.id !== conversationId) return c;
@@ -588,10 +716,19 @@ const AiChat: React.FC = () => {
           ...c,
           draft: false,
           pendingReply: true,
-          // 新建会话先用首条消息截断作为临时标题，后端返回后替换
+          // 新建会话先用首条消息截断作为临时标题，start 事件返回后替换
           title: c.sessionId === null ? content.slice(0, 20) : c.title,
           updatedAt: now,
-          messages: [...c.messages, userMessage],
+          messages: [
+            ...c.messages,
+            userMessage,
+            {
+              id: assistantMessageId,
+              role: CHAT_MESSAGE_ROLE.ASSISTANT,
+              content: '',
+              createdAt: now,
+            },
+          ],
         };
       }),
     );
@@ -599,71 +736,122 @@ const AiChat: React.FC = () => {
     setInput('');
     setPendingId(conversationId);
 
-    try {
-      const res = await sendChatMessage({ modelId, sessionId, message: content });
+    const controller = new AbortController();
+    streamControllersRef.current.set(conversationId, controller);
 
-      setConversations((prev) =>
-        prev.map((c) => {
-          if (c.id !== conversationId) return c;
-          const nextMessages = [...c.messages];
-          // 用后端返回的用户消息替换本地乐观消息
-          nextMessages[nextMessages.length - 1] = {
-            id: String(res.userMessage.id),
-            role: CHAT_MESSAGE_ROLE.USER,
-            content: res.userMessage.content,
-            createdAt: parseDateTime(res.userMessage.createTime),
-          };
-          nextMessages.push({
-            id: String(res.assistantMessage.id),
-            role: CHAT_MESSAGE_ROLE.ASSISTANT,
-            content: res.assistantMessage.content,
-            createdAt: parseDateTime(res.assistantMessage.createTime),
-          });
-          return {
-            ...c,
-            sessionId: res.sessionId,
-            title: res.title || c.title,
-            pendingReply: false,
-            updatedAt: Date.now(),
-            messages: nextMessages,
-            // 已加载过历史的会话，总数同步 +2（用户消息 + 助手消息）
-            msgTotal: c.msgTotal === undefined ? c.msgTotal : c.msgTotal + 2,
-          };
-        }),
-      );
+    // 只更新"当前会话"的快捷方法，避免每个回调重复写 map 逻辑
+    const patchConversation = (updater: (c: Conversation) => Conversation) => {
+      setConversations((prev) => prev.map((c) => (c.id === conversationId ? updater(c) : c)));
+    };
 
-      // 同步侧栏：新会话插到最前，已有会话更新标题和更新时间
-      setSessions((prev) => {
-        const exists = prev.some((s) => s.sessionId === res.sessionId);
-        if (exists) {
-          return prev.map((s) =>
-            s.sessionId === res.sessionId
-              ? { ...s, title: res.title || s.title, updatedAt: Date.now() }
-              : s,
-          );
-        }
-        return [
-          {
-            key: `session-${res.sessionId}`,
-            sessionId: res.sessionId,
-            title: res.title,
-            updatedAt: Date.now(),
-            pendingReply: false,
-          },
-          ...prev,
-        ];
-      });
-      if (sessionId === null) setSessionTotal((prev) => prev + 1);
-    } catch {
-      message.error('消息发送失败，请稍后重试');
-      setConversations((prev) =>
-        prev.map((c) => (c.id === conversationId ? { ...c, pendingReply: false } : c)),
-      );
-    } finally {
+    // 按消息 id 用后端消息替换本地消息
+    const replaceMessage = (messageId: string, next: ChatMessage) => {
+      patchConversation((c) => ({
+        ...c,
+        messages: c.messages.map((m) => (m.id === messageId ? next : m)),
+      }));
+    };
+
+    // 回复结束：解除 pendingReply；若占位消息仍为空（请求失败/无内容）则移除它
+    const finishReply = () => {
+      patchConversation((c) => ({
+        ...c,
+        pendingReply: false,
+        messages: c.messages.filter((m) => !(m.id === assistantMessageId && !m.content)),
+      }));
       setPendingId((prev) => (prev === conversationId ? null : prev));
+    };
+
+    try {
+      // 订阅 SSE 流：signal 用于删除会话 / 离开页面时主动中断请求
+      await streamChatMessage(
+        { modelId, sessionId, message: content, signal: controller.signal },
+        {
+          // 每收到一个 SSE 事件就在这里更新 UI
+          onMessage(event) {
+            // start：拿到真实 sessionId / 标题 / 后端用户消息
+            if (event.type === 'start') {
+              const data = event.data as StreamStartData;
+              if (!data?.userMessage) return;
+              // 用后端用户消息替换本地乐观消息，并同步会话 id / 标题
+              replaceMessage(userMessage.id, {
+                id: String(data.userMessage.id),
+                role: CHAT_MESSAGE_ROLE.USER,
+                content: data.userMessage.content,
+                createdAt: parseDateTime(data.userMessage.createTime),
+              });
+              patchConversation((c) => ({
+                ...c,
+                sessionId: data.sessionId,
+                title: data.title || c.title,
+              }));
+              syncSessionSidebar(data.sessionId, data.title);
+              if (sessionId === null) setSessionTotal((prev) => prev + 1);
+              return;
+            }
+
+            // chunk：把增量文本追加到 AI 占位消息上，实现逐字/逐块输出
+            if (event.type === 'chunk') {
+              const chunk = typeof event.data === 'string' ? event.data : '';
+              if (!chunk) return;
+              patchConversation((c) => ({
+                ...c,
+                messages: c.messages.map((m) =>
+                  m.id === assistantMessageId ? { ...m, content: m.content + chunk } : m,
+                ),
+              }));
+              return;
+            }
+
+            // complete：用完整 AI 消息替换占位消息，并同步会话更新时间
+            if (event.type === 'complete') {
+              const data = event.data as ChatMessageDto;
+              replaceMessage(assistantMessageId, {
+                id: String(data.id),
+                role: CHAT_MESSAGE_ROLE.ASSISTANT,
+                content: data.content,
+                createdAt: parseDateTime(data.createTime),
+              });
+              patchConversation((c) => ({
+                ...c,
+                updatedAt: Date.now(),
+                // 已加载过历史的会话，总数同步 +2（用户消息 + 助手消息）
+                msgTotal: c.msgTotal === undefined ? c.msgTotal : c.msgTotal + 2,
+              }));
+              finishReply();
+              return;
+            }
+
+            // error：服务端返回的流内错误（非 HTTP 错误），提示后结束回复
+            if (event.type === 'error') {
+              message.error(String(event.data ?? 'AI 回复失败'));
+              finishReply();
+            }
+          },
+          // 连接正常关闭：兜底解除 pending 状态（complete 后重复调用无副作用）
+          onClose() {
+            finishReply();
+          },
+          // 网络/HTTP 层异常：具体提示放到下面的 catch 中统一处理
+          onError(error) {
+            console.error('AI 流式请求异常：', error);
+          },
+        },
+      );
+    } catch (error) {
+      // 主动中断（删除会话、离开页面）不提示错误
+      if (!controller.signal.aborted) {
+        console.error('AI 流式请求失败：', error);
+        message.error('消息发送失败，请稍后重试');
+      }
+      finishReply();
+    } finally {
+      // 请求结束，移除控制器引用
+      streamControllersRef.current.delete(conversationId);
     }
   };
 
+  // Enter 发送，Shift + Enter 换行；输入法组合输入（如中文拼音）期间不触发发送
   const handleKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
@@ -671,8 +859,10 @@ const AiChat: React.FC = () => {
     }
   };
 
+  // 侧栏内容：移动端放进 Drawer，桌面端直接渲染为 aside（两者共用同一份 JSX）
   const sidebarContent = (
     <div className={styles.sidebarInner}>
+      {/* 品牌区 */}
       <div className={styles.brand}>
         <span className={styles.brandLogo}>
           <Icon icon="mdi:robot-happy" size={22} />
@@ -693,6 +883,7 @@ const AiChat: React.FC = () => {
         新建对话
       </Button>
 
+      {/* 搜索框：keyword 变化会触发防抖后重新拉取第一页 */}
       <Input
         allowClear
         className={styles.searchInput}
@@ -707,6 +898,7 @@ const AiChat: React.FC = () => {
         <span className={styles.listCount}>{sessionTotal}</span>
       </div>
 
+      {/* 会话列表：滚动到底部触发下一页加载 */}
       <div className={styles.conversationList} onScroll={handleSessionListScroll}>
         {sidebarSessions.length ? (
           sidebarSessions.map((item) => (
@@ -725,6 +917,7 @@ const AiChat: React.FC = () => {
                   {item.pendingReply && <em className={styles.pendingTag}>回复中…</em>}
                 </span>
               </div>
+              {/* 会话操作菜单：修改名称 / 删除 */}
               <Dropdown
                 trigger={['click']}
                 menu={{
@@ -781,6 +974,7 @@ const AiChat: React.FC = () => {
 
   return (
     <div className={styles.page}>
+      {/* 响应式布局：移动端侧栏用 Drawer，桌面端用可收起的 aside */}
       {isMobile ? (
         <Drawer
           open={drawerOpen}
@@ -804,6 +998,7 @@ const AiChat: React.FC = () => {
       )}
 
       <div className={styles.main}>
+        {/* 顶部标题栏：侧栏开关 + 当前会话标题 / 消息数 */}
         <div className={styles.mainHeader}>
           <div className={styles.mainHeaderLeft}>
             <Button
@@ -836,6 +1031,7 @@ const AiChat: React.FC = () => {
         </div>
 
         <div className={styles.chatBody}>
+          {/* 有消息 / 正在回复 / 正在加载消息时展示列表，否则展示欢迎页 */}
           {messages.length ||
           pendingId === activeConversation?.id ||
           activeConversation?.msgLoading ? (
@@ -852,6 +1048,7 @@ const AiChat: React.FC = () => {
                   加载更早的消息…
                 </div>
               )}
+              {/* 消息列表：AI 消息带头像并用 Markdown 渲染，用户消息渲染纯文本气泡 */}
               {messages.map((item) => (
                 <div
                   key={item.id}
@@ -880,47 +1077,44 @@ const AiChat: React.FC = () => {
                       )}
                     >
                       {item.role === CHAT_MESSAGE_ROLE.ASSISTANT ? (
-                        <MarkdownRenderer content={item.content} />
+                        item.content ? (
+                          <MarkdownRenderer content={item.content} />
+                        ) : (
+                          // 流式回复等待首个 chunk 时展示动效
+                          <span className={styles.typing}>
+                            <span className={styles.typingDot} />
+                            <span className={styles.typingDot} />
+                            <span className={styles.typingDot} />
+                          </span>
+                        )
                       ) : (
                         item.content
                       )}
                     </div>
-                    <div className={styles.messageFooter}>
-                      <span className={styles.messageTime}>
-                        {formatMessageTime(item.createdAt)}
-                      </span>
-                      {item.role === CHAT_MESSAGE_ROLE.ASSISTANT && (
-                        <button
-                          type="button"
-                          className={styles.copyAction}
-                          onClick={() => handleCopyMessage(item)}
-                        >
-                          <Icon
-                            icon={copiedId === item.id ? 'mdi:check' : 'mdi:content-copy'}
-                            size={13}
-                          />
-                          {copiedId === item.id ? '已复制' : '复制'}
-                        </button>
-                      )}
-                    </div>
+                    {/* 流式回复还没有内容时不展示时间与复制 */}
+                    {!(item.role === CHAT_MESSAGE_ROLE.ASSISTANT && !item.content) && (
+                      <div className={styles.messageFooter}>
+                        <span className={styles.messageTime}>
+                          {formatMessageTime(item.createdAt)}
+                        </span>
+                        {item.role === CHAT_MESSAGE_ROLE.ASSISTANT && (
+                          <button
+                            type="button"
+                            className={styles.copyAction}
+                            onClick={() => handleCopyMessage(item)}
+                          >
+                            <Icon
+                              icon={copiedId === item.id ? 'mdi:check' : 'mdi:content-copy'}
+                              size={13}
+                            />
+                            {copiedId === item.id ? '已复制' : '复制'}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
-
-              {pendingId === activeConversation?.id && (
-                <div className={styles.messageRow}>
-                  <span className={styles.assistantAvatar}>
-                    <Icon icon="mdi:robot-happy" size={18} />
-                  </span>
-                  <div className={styles.messageContent}>
-                    <div className={clsx(styles.bubble, styles.assistantBubble, styles.typing)}>
-                      <span className={styles.typingDot} />
-                      <span className={styles.typingDot} />
-                      <span className={styles.typingDot} />
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div className={styles.welcome}>
@@ -948,8 +1142,10 @@ const AiChat: React.FC = () => {
           )}
         </div>
 
+        {/* 输入区：文本域 + 模型选择 + 发送按钮，焦点样式统一由外层 composer 呈现 */}
         <div className={styles.composerWrap}>
           <div className={styles.composer}>
+            {/* Enter 发送、Shift + Enter 换行，autoSize 最多 6 行 */}
             <Input.TextArea
               ref={inputRef}
               variant="borderless"
@@ -961,6 +1157,7 @@ const AiChat: React.FC = () => {
               autoSize={{ minRows: 1, maxRows: 6 }}
             />
             <div className={styles.composerToolbar}>
+              {/* 模型选择：borderless 样式融入输入框 */}
               <Select
                 variant="borderless"
                 className={styles.modelSelect}
@@ -977,6 +1174,7 @@ const AiChat: React.FC = () => {
                 <span className={styles.sendHint}>
                   {busy ? 'AI 正在回复…' : 'Enter 发送 · Shift + Enter 换行'}
                 </span>
+                {/* 输入为空或 AI 正在回复时禁用发送 */}
                 <Button
                   type="primary"
                   className={styles.sendBtn}

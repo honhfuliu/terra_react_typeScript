@@ -616,7 +616,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 14px 16px;
+  height: 24px;
 }
 
 .typingDot {
@@ -674,6 +674,32 @@
       0 0 0 3px rgba(22, 119, 255, 0.1),
       0 10px 30px rgba(22, 119, 255, 0.12);
   }
+
+  // 内部输入区不再绘制自己的边框和焦点环，焦点样式统一由外层容器呈现
+  :global {
+    .ant-input-textarea {
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    textarea.ant-input {
+      border: none !important;
+      outline: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+
+      &:hover,
+      &:focus,
+      &:focus-within,
+      &:focus-visible {
+        border: none !important;
+        outline: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+    }
+  }
 }
 
 .textarea {
@@ -682,8 +708,20 @@
   line-height: 1.7;
   color: var(--text-color);
   background: transparent;
+  border: none !important;
+  outline: none !important;
   resize: none;
   box-shadow: none !important;
+
+  &:hover,
+  &:focus,
+  &:focus-within,
+  &:focus-visible {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
 }
 
 .composerToolbar {

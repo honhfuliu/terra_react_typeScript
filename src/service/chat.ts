@@ -69,11 +69,11 @@ export interface StreamChatCallbacks {
 }
 
 // AI 流式聊天
-// AI 流式聊天
 export const streamChatMessage = async (data: StreamChatParams, callbacks: StreamChatCallbacks) => {
-  const baseURL = import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
+  const baseURL = import.meta.env.VITE_API_BASE_URL;
   await fetchEventSource(`${baseURL}/ai/chat/stream`, {
     method: 'POST',
+    openWhenHidden: true,
     headers: {
       'Content-Type': 'application/json',
       ...getAuthHeaders(),
