@@ -1,8 +1,8 @@
 import request from '@/utils/request.ts';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 
-import { STORAGE_KEY } from '@/constants';
-import storage from '@/utils/storage.ts';
+import { getAuthHeaders, handleForbidden, handleUnauthorized } from '@/utils/requestAuth.ts';
+import { HTTP } from '@/constants';
 
 // 发送对话消息入参（sessionId 为 null 时表示新建会话）
 export type SendChatParams = {
@@ -69,15 +69,14 @@ export interface StreamChatCallbacks {
 }
 
 // AI 流式聊天
+// AI 流式聊天
 export const streamChatMessage = async (data: StreamChatParams, callbacks: StreamChatCallbacks) => {
-  const baseURL = import.meta.env.VITE_API_BASE_URL;
-  const token = storage.get(STORAGE_KEY.TOKEN);
-
+  const baseURL = import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
   await fetchEventSource(`${baseURL}/ai/chat/stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      ...getAuthHeaders(),
     },
     body: JSON.stringify({
       sessionId: data.sessionId,
@@ -85,15 +84,20 @@ export const streamChatMessage = async (data: StreamChatParams, callbacks: Strea
       message: data.message,
     }),
     signal: data.signal,
-
     // 建立连接后检查响应
     async onopen(response) {
+      if (response.status === HTTP.UNAUTHORIZED) {
+        handleUnauthorized();
+        throw new Error('登录已失效');
+      }
+      if (response.status === HTTP.FORBIDDEN) {
+        handleForbidden();
+        throw new Error('没有权限访问该资源');
+      }
       if (!response.ok) {
         throw new Error(`请求失败：${response.status}`);
       }
-
       const contentType = response.headers.get('content-type');
-
       if (!contentType?.includes('text/event-stream')) {
         throw new Error('响应类型不是 SSE');
       }
@@ -104,7 +108,6 @@ export const streamChatMessage = async (data: StreamChatParams, callbacks: Strea
       if (!message.data) return;
       try {
         const eventData = JSON.parse(message.data) as AiChatStreamEvent;
-        // 检查 SSE 事件名称和 JSON 事件类型是否一致
         if (message.event && message.event !== eventData.type) {
           throw new Error('SSE 事件类型不一致');
         }
@@ -122,10 +125,8 @@ export const streamChatMessage = async (data: StreamChatParams, callbacks: Strea
     // 请求异常
     onerror(error) {
       const requestError = error instanceof Error ? error : new Error('AI 流式请求失败');
-
       callbacks.onError?.(requestError);
-
-      // 抛出异常，停止 fetch-event-source 自动重试
+      // 抛出异常，停止自动重试
       throw requestError;
     },
   });
