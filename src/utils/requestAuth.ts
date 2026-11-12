@@ -5,7 +5,7 @@ import { HTTP, STORAGE_KEY } from '@/constants';
 /**
  * 获取请求认证请求头
  */
-export const getAuthHeaders = () => {
+export const getAuthHeaders = (): Record<string, string> => {
   const token = storage.get(STORAGE_KEY.TOKEN);
   return token ? { [HTTP.TOKEN_HEADER]: `${HTTP.TOKEN_PREFIX}${token}` } : {};
 };
