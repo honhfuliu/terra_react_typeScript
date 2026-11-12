@@ -23,10 +23,10 @@ const Search: React.FC = () => {
   const routes = useSelector((state: RootState) => state.permission.routes);
 
   const searchValues = useMemo(() => {
-    console.log('触发getSearchableRoutes');
+    // console.log('触发getSearchableRoutes');
     return getSearchableRoutes(routes?.children ?? []);
   }, [routes]);
-  console.log('searchValues', searchValues);
+  // console.log('searchValues', searchValues);
   const handleOk = () => {
     setIsModalOpen(false);
   };

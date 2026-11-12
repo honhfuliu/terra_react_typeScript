@@ -123,9 +123,10 @@ const Role: React.FC = () => {
   const [autoExpandParent, setAutoExpandParent] = useState<boolean>(true);
   const [isTreeExpanded, setIsTreeExpanded] = useState(false);
   const [checkedKeys, setCheckedKeys] = useState<React.Key[]>([]);
+  const [halfCheckedKeys, setHalfCheckedKeys] = useState<React.Key[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<React.Key[]>([]);
-  // Ant Design 中 checkStrictly=false 才开启父子节点联动。
-  const [checkStrictly, setCheckStrictly] = useState(false);
+  // 默认非联动（checkStrictly=true）：用户能清晰看到每个被勾选的节点
+  const [checkStrictly, setCheckStrictly] = useState(true);
   const screens = Grid.useBreakpoint();
   //提交表单数据
   const [roleForm] = Form.useForm<RoleAddType>();
@@ -199,7 +200,12 @@ const Role: React.FC = () => {
               okText="确定"
               cancelText="取消"
             >
-              <Button type="link" size="small" danger icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<Icon icon="mdi:trash-can-outline" size={16} />}
+              >
                 删除
               </Button>
             </Popconfirm>
@@ -226,13 +232,15 @@ const Role: React.FC = () => {
       setMenuTree(tree);
       // 回显前做归一化：剔除半选父级 key，避免“父子联动”下整棵子树被全部勾选
       const rawKeys = Array.isArray(checkedKeysValue) ? checkedKeysValue : [];
-      const keys = normalizeMenuKeys(rawKeys, tree);
-      setCheckedKeys(keys);
+      normalizeMenuKeys(rawKeys, tree);
+      setCheckedKeys(rawKeys);
+      setHalfCheckedKeys([]);
       // 自动展开授权项所在分支，避免深层勾选被折叠而看不到
-      setExpandedKeys(collectAncestorKeys(tree, keys));
+      setExpandedKeys(collectAncestorKeys(tree, rawKeys));
       setAutoExpandParent(true);
       setSelectedKeys([]);
       setIsTreeExpanded(false);
+      setCheckStrictly(true); // 每次打开对话框默认关闭父子联动
       setIsModalOpen(true);
     } catch (e) {
       console.error(e);
@@ -297,8 +305,7 @@ const Role: React.FC = () => {
 
       // 下载 Excel（优先使用后端响应头中的文件名）
       const fileName =
-        getFileNameFromDisposition(res.headers['content-disposition'] as string) ??
-        '角色列表.xlsx';
+        getFileNameFromDisposition(res.headers['content-disposition'] as string) ?? '角色列表.xlsx';
       downloadFile(res.data, fileName);
 
       message.success('导出成功');
@@ -324,6 +331,7 @@ const Role: React.FC = () => {
       message.success('操作成功');
       setIsModalOpen(false);
       roleForm.resetFields();
+      await getRoleList(pagination.current, pagination.pageSize);
     } catch (e) {
       console.error(e);
     }
@@ -335,7 +343,7 @@ const Role: React.FC = () => {
   };
   // 多行选择处理
   const rowSelection: TableRowSelection<RoleRow> = {
-    onChange: (selectedRowKeys, _selectedRows) => {
+    onChange: (selectedRowKeys) => {
       setSelectedRowKeys(selectedRowKeys);
     },
     getCheckboxProps: () => ({ disabled: false }),
@@ -365,27 +373,38 @@ const Role: React.FC = () => {
 
   // “全选”仅批量更新菜单权限的勾选 key。
   const handleCheckAllChange = (checked: boolean) => {
-    // 更新 Tree
     setCheckedKeys(checked ? getAllTreeKeys(menuTree) : []);
+    setHalfCheckedKeys([]);
   };
 
   // Ant Design 的 checkStrictly 与父子联动语义相反：false 表示父子联动。
   const handleLinkageChange = (linked: boolean) => {
-    setCheckStrictly(!linked);
+    const nowStrict = !linked;
+    setCheckStrictly(nowStrict);
+    if (nowStrict && halfCheckedKeys.length > 0) {
+      setCheckedKeys((prev) => Array.from(new Set([...prev, ...halfCheckedKeys])));
+      setHalfCheckedKeys([]);
+    }
   };
 
-  // Tree 勾选事件：兼容联动与非联动两种返回值结构，统一保存已勾选 key。
-  const onCheck: TreeProps['onCheck'] = (checkedKeysValue) => {
+  // Tree 勾选事件：兼容联动与非联动两种返回值结构，统一保存已勾选 key 和半选父级 key。
+  const onCheck: TreeProps['onCheck'] = (checkedKeysValue, info) => {
     if (Array.isArray(checkedKeysValue)) {
       setCheckedKeys(checkedKeysValue);
+      setHalfCheckedKeys((info as { halfCheckedKeys?: React.Key[] }).halfCheckedKeys ?? []);
     } else {
       setCheckedKeys(checkedKeysValue.checked);
+      setHalfCheckedKeys(checkedKeysValue.halfChecked ?? []);
     }
   };
 
   useEffect(() => {
-    roleForm.setFieldValue('menuPermissions', checkedKeys);
-  }, [checkedKeys]);
+    // 提交给后端的权限 key = 完整勾选节点 + 半选父级
+    roleForm.setFieldValue(
+      'menuPermissions',
+      Array.from(new Set([...checkedKeys, ...halfCheckedKeys])),
+    );
+  }, [checkedKeys, halfCheckedKeys]);
   // Tree 节点点击事件
   const onSelect: TreeProps['onSelect'] = (selectedKeysValue) => {
     setSelectedKeys(selectedKeysValue);
@@ -420,8 +439,8 @@ const Role: React.FC = () => {
       pageSize: pageSize,
     }));
     await getRoleList(page, pageSize);
-    console.log('Page: ', page);
-    console.log('pageSize: ', pageSize);
+    // console.log('Page: ', page);
+    // console.log('pageSize: ', pageSize);
   };
   // 批量删除
   const handleDeleteBatch = async () => {
@@ -536,7 +555,10 @@ const Role: React.FC = () => {
                 okText="确定"
                 cancelText="取消"
               >
-                <Button className={styles.toolButton} icon={<Icon icon="mdi:trash-can-outline" size={16} />}>
+                <Button
+                  className={styles.toolButton}
+                  icon={<Icon icon="mdi:trash-can-outline" size={16} />}
+                >
                   删除
                 </Button>
               </Popconfirm>
@@ -581,6 +603,7 @@ const Role: React.FC = () => {
           width={screens.md ? 760 : 'calc(100vw - 32px)'}
           closable={{ 'aria-label': 'Custom Close Button' }}
           open={isModalOpen}
+          forceRender
           onCancel={handleCancel}
           footer={[
             <Button key="cancel" onClick={handleCancel}>

@@ -16,7 +16,6 @@ import {
   Space,
   Table,
   TableColumnsType,
-
 } from 'antd';
 import { useEffect, useState } from 'react';
 import TextArea from 'antd/es/input/TextArea';
@@ -175,9 +174,9 @@ const Dict: React.FC = () => {
     try {
       const data = await dictTypeListInfo(dictTypeName);
       setDictTypeRows(data);
-      console.log('res', data);
+      // console.log('res', data);
     } catch (e) {
-      console.log('查询字典失败：', e);
+      console.error('查询字典失败：', e);
     }
   };
   useEffect(() => {
@@ -238,7 +237,7 @@ const Dict: React.FC = () => {
     try {
       values = await dictForm.validateFields();
     } catch (e) {
-      console.log('表单校验失败：', e);
+      console.error('表单校验失败：', e);
       return;
     }
     try {
@@ -340,7 +339,7 @@ const Dict: React.FC = () => {
     try {
       values = await dictDataForm.validateFields();
     } catch (e) {
-      console.log('表单校验失败：', e);
+      console.error('表单校验失败：', e);
       return;
     }
     try {
@@ -568,6 +567,7 @@ const Dict: React.FC = () => {
           title={dictDataModalTitle}
           width={screens.md ? 640 : 'calc(100vw - 32px)'}
           open={dictDataModalOpen}
+          forceRender
           onCancel={handleAddDictDataCancel}
           footer={[
             <Button key="cancel" onClick={handleAddDictDataCancel}>

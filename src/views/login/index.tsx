@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styles from './index.module.less';
-import { Button, Checkbox, CheckboxProps, Form, Input } from 'antd';
+import { Button, Checkbox, CheckboxProps, ConfigProvider, Form, Input, theme } from 'antd';
 import Logo from '@/assets/images/logo.svg';
 import { login, getCode, LoginFormType } from '@/service/auto.ts';
 import Loading from '@/components/Loading';
@@ -45,15 +45,15 @@ const Login: React.FC = () => {
     let values: LoginFormType;
     try {
       values = await form.validateFields();
-      console.log('获取到的表单数据：', values);
+      // console.log('获取到的表单数据：', values);
       // await loginApi(values);
     } catch (e) {
-      console.log('表单验证失败', e);
+      console.error('表单验证失败', e);
       return;
     }
     try {
       const result = await login({ ...values, uuid: captchaUuid });
-      console.log('result', result);
+      // console.log('result', result);
       if (result) {
         storage.set(STORAGE_KEY.TOKEN, result.token);
         const userInfo = {
@@ -80,7 +80,7 @@ const Login: React.FC = () => {
     }
   };
   return (
-    <>
+    <ConfigProvider theme={{ algorithm: theme.defaultAlgorithm }}>
       <div className={`${styles.loginPage} ${styles.techBg}`}>
         <div className={styles.loginCard}>
           <div className={styles.loginCardHeader}>
@@ -189,7 +189,7 @@ const Login: React.FC = () => {
           <Loading fullscreen={true} tip={'路由加载中'} />
         </div>
       </div>
-    </>
+    </ConfigProvider>
   );
 };
 export default Login;

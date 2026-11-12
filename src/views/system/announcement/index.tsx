@@ -230,7 +230,7 @@ const Announcement: React.FC = () => {
     try {
       values = await announceForm.validateFields();
     } catch (error) {
-      console.log('表单校验失败：', error);
+      console.error('表单校验失败：', error);
       return;
     }
 
