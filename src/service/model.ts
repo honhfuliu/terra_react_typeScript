@@ -87,7 +87,7 @@ export const deleteModel = async (id: number) => {
   }
 };
 
-// AI 对话可用模型
+// 获取 AI 对话可用模型
 export type ChatModelOption = {
   id: number;
   modelCode: string;
@@ -97,6 +97,24 @@ export type ChatModelOption = {
 export const getChatModelOptions = async () => {
   try {
     return await request.get<ChatModelOption[]>('/ai/chat/models');
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+};
+
+// 模型下拉选项（全量模型，供监控/筛选等页面使用）
+export type ModelOption = {
+  id: number;
+  modelCode: string;
+};
+
+// 获取所有模型下拉选项（不传 modelType 即返回全部）
+export const getModelOptions = async (modelType?: string | true) => {
+  try {
+    return await request.get<ModelOption[]>('/ai/model/options', {
+      params: modelType !== undefined ? { modelType } : undefined,
+    });
   } catch (e) {
     console.error(e);
     throw e;
